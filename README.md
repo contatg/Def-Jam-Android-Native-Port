@@ -1,67 +1,38 @@
 # Def Jam Android Native Port
 
-An experimental native Android ARM64 port of **Def Jam: Fight for NY**, based on
-[vyanhursky/DefJamFFNY-recomp](https://github.com/vyanhursky/DefJamFFNY-recomp) and its xboxrecomp runtime.
+An unofficial Android ARM64 port of **Def Jam: Fight for NY**.
 
-## Bring your own original game
+**Android port maintained by Raylander (contatg).**
 
-**The original Xbox game is not included.** This source repository and its
-patches do not distribute ISO/XISO disc images, `default.xbe`, the extracted game data directory,
-music archives, or save files. This project provides a way to run the game using the data from **your own
-original Xbox disc or an original ISO you own**. You must supply and extract that data yourself.
-An APK by itself does not provide the original game.
+This repository is a documentation and release hub. Application source code,
+build projects and development workflows are not included in the current branch.
+The repository is private. Existing upstream and third-party licenses remain in effect;
+removing source files from this branch does not replace those licenses.
 
-Launcher and application artwork is included for identification only. Def Jam, Xbox, the original
-game, characters, logos and artwork belong to their respective owners. This is an unofficial
-community project and is not affiliated with or endorsed by the original publishers or platform owners.
-The source license does not grant rights to the original game's artwork or content.
+## Your original game is required
 
-## Features
+The original Xbox disc/ISO and extracted game data are not distributed here.
+You must extract your own original Xbox disc or ISO and copy the complete game
+contents to your phone. An ISO file alone, or `default.xbe` alone, is insufficient.
 
-- Native Android ARM64 launcher and Vulkan rendering, with optional Turnip support.
-- Custom touch controls and an in-game wrench shortcut for the layout editor.
-- Separate menu controls, grouped D-pad editing, and START/ENTER navigation.
-- Always-enabled asynchronous rendering, a simple FPS display, and saved graphics settings.
-- One guest CPU for compatibility; native workers may use all permitted CPUs.
-- English launcher, editor, status messages and project documentation entry points.
+Required executable location:
 
-The user-provided launcher image is packaged unchanged. Existing custom control artwork,
-button mappings, save paths, package ID and settings remain compatible.
+`/storage/emulated/0/DefJamFFNY/game/default.xbe`
 
-## Build on your PC
+Create **DefJamFFNY** in the top level of your phone's **internal shared storage**,
+then place the extracted game contents inside its **game** folder. This does not
+mean the Android system root or the `Android/data` folder.
 
-See [Android build instructions](android/README.md). Use your own supported original game dump.
-The local `tools/xboxrecomp` runtime is included; no submodule initialization is required for this snapshot.
-SDL, ImGui and shaderc are prepared by the Android dependency script. Open-source loader sources
-and their notices are retained in `android/vendor`.
+See the [complete extraction and folder guide](SETUP.md) and [credits](CREDITS.md).
 
-From the project directory in PowerShell:
+## APKs and updates
 
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass -Force
-$env:Path = "C:\dev\gradle-8.7\bin;$env:Path"
-.\android\Compilar-DefJam-Android.ps1 -DataDir "C:\Games\DefJamFFNY-data" -Variant Release
-```
+When published, official APKs are available from this repository's
+[Releases page](https://github.com/contatg/Def-Jam-Android-Native-Port/releases).
+Use an update signed with the same signing key to preserve app compatibility.
+Keep a backup of your game data and saves; do not uninstall or clear app data
+just to install an update.
 
-After a successful build, install without clearing app data:
-
-```powershell
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "android\app\build\outputs\apk\release\app-release.apk"
-```
-
-## APK downloads and validation
-
-APKs are compiled on the maintainer's PC and can be uploaded to Releases separately.
-GitHub Actions checks production control and runtime fixtures; it does not build an APK or require
-private generated game sources. Passing code checks or compiling an APK does not prove gameplay,
-background/resume behavior, or a particular frame rate on a device.
-
-The latest source is **0.5.7-v21-fixed-render**. Asynchronous rendering is always enabled and parallel
-vertex preparation is disabled. Neither setting is exposed in the launcher or an in-game menu.
-Other native workers retain their automatic CPU policy. No particular gameplay frame rate is guaranteed.
-
-## Credits and licenses
-
-Original recompilation project: [vyanhursky/DefJamFFNY-recomp](https://github.com/vyanhursky/DefJamFFNY-recomp).
-See [LICENSE](LICENSE) and the notices accompanying each third-party component. Original game content
-must be obtained from your own original disc/ISO and is not supplied by this project.
+No particular frame rate is guaranteed. This project is not affiliated with or
+endorsed by EA, Xbox, Def Jam or the original rights holders. The game, music,
+characters, logos and artwork belong to their respective owners.

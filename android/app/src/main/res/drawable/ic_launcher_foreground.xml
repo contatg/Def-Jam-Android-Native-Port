@@ -1,3 +1,0 @@
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:left="18dp" android:right="18dp" android:top="27dp" android:bottom="27dp"><bitmap android:src="@drawable/ic_launcher_art" android:gravity="fill"/></item>
-</layer-list>
