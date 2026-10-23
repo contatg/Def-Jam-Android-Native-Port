@@ -2,7 +2,7 @@
 
 An unofficial Android ARM64 port of **Def Jam: Fight for NY**.
 
-**Android port maintained by Raylander (contatg).**
+**Android port maintained by  (contatg).**
 
 This repository is a documentation and release hub. Application source code,
 build projects and development workflows are not included in the current branch.
