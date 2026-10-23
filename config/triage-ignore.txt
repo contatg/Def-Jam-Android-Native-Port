@@ -1,0 +1,5 @@
+# Lines scripts/triage.py must not report as "unclassified". One regular expression per line,
+# matched (case-sensitive, as bytes) anywhere in a log line of logs/run-*.log.err. Lines starting with
+# # are comments. Add a pattern when a harmless line keeps showing up in the digest; keep the
+# pattern narrow so a real fault with similar words is still reported. The GPU executor's
+# "N unhandled methods" coverage note is built in.

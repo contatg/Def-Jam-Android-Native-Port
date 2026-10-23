@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "routes": {
+    "fight-terrordome": [
+      {
+        "capture": "fight-terrordome-60s.bmp",
+        "baseline": "approved/terrordome-60s.bmp",
+        "approved": false,
+        "sha256": "REPLACE_WITH_APPROVED_LOCAL_BASELINE_SHA256",
+        "max_mae": 3.0,
+        "max_changed_fraction": 0.02,
+        "pixel_threshold": 16,
+        "masks": []
+      }
+    ],
+    "intro": [
+      {
+        "capture": "intro-46s.bmp",
+        "baseline": "approved/intro-46s.bmp",
+        "approved": false,
+        "sha256": "REPLACE_WITH_APPROVED_LOCAL_BASELINE_SHA256",
+        "max_mae": 3.0,
+        "max_changed_fraction": 0.02,
+        "pixel_threshold": 16,
+        "masks": []
+      }
+    ]
+  }
+}

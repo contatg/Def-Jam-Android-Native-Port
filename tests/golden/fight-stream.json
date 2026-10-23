@@ -1,0 +1,12 @@
+{
+ "schema": 1,
+ "what": "SHA-256 of the game-state stream (scripts/test_evidence.state_stream) of the first 1800 fight steps of the `fight` route",
+ "route": "fight",
+ "rng_seed": 20261006,
+ "step_input": "scenario_suite.step_input default",
+ "max_step": 1800,
+ "records": 80,
+ "sha256": "66a0593bf098a5431cab169eeaddde85fdfdc2da12f20cdadb63987ee05227ec",
+ "recorded": "2026-10-06, toolkit c7059bf, identical on win-x64-release and win-x64-debug and on two save fixtures",
+ "note": "A hash of derived state, not game data. It changes when a change alters how the fight plays; if that is intended, record a new one with `python scripts/regress.py --only repeat --update-golden`."
+}

@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "about": "Building blocks for scripts/scenarios.py: how to pick a match type, a venue and a fighter from the menus, which Story points the fixture library should hold, and what is known about launching a cutscene. Pad steps use the harness stage syntax (docs/09-testing-harness.md). 'calibrated' means a run has confirmed the step lands where the name says; an uncalibrated entry is a guess to be checked with --expect-character or the captures. No game data: names and menu steps only.",
+  "modes": {
+    "one-on-one": {"cmtype": "a@5+4x7", "fighters": 2, "calibrated": true,
+                   "note": "the first match type; the fight and fight-result routes"},
+    "free-for-all": {"cmtype": "right@5;right@6.5;a@9", "fighters": 4, "calibrated": true,
+                     "note": "the third match type; the ffa routes"}
+  },
+  "venues": {
+    "foundation": {"steps": "", "index": 1, "calibrated": true, "note": "the cursor's starting venue"},
+    "terrordome": {"steps": "right@6", "index": 6, "calibrated": true, "note": "retail FE ID6; this positional recipe was calibrated with the older unlock state. With every venue unlocked it selects FE ID14 (Hunt's Point); the named harness stress routes and generated Terrordome scenarios inject ChooseVenue(6) before loading. The stress check also asserts its value at StartGame."},
+    "the-pit": {"steps": "right@6;down@8", "index": 19, "calibrated": true,
+                "note": "Game.ChooseVenue(19), one step down from the Terrordome on the map; calibrated on macOS 2026-10-14 from the venue-map capture and the fight"}
+  },
+  "fighters": {
+    "about": "The fighter grid is moved with right/down from where the cursor starts. In a one-on-one route player 1 is already READY (the profile's fighter: Blaze, character 4, with the harness's profiles) when the controllersetup(0,0= presses arrive, so the presses after the first A choose the CPU's fighter. Record what a move list picks with `scenarios.py generate ... --expect-character SLOT:N`: the match_start telemetry names the character index each slot got, so a wrong calibration fails instead of fighting the wrong fighter.",
+    "player_default": "right@4;a@6;right@10;a@12;a@16;a@20;a@24;a@28",
+    "cpu_default": "a@4+4x6",
+    "calibrated": [
+      {"p1": "right@4;a@6;right@10;a@12;a@16;a@20;a@24;a@28", "characters": {"0": 4, "1": 9},
+       "names": "Blaze; Doc (CPU)", "calibrated": true, "note": "player_default: every one-on-one harness route"},
+      {"p1": "right@4;right@6;a@8;right@11;a@13;a@17;a@21;a@25;a@29", "characters": {"0": 4, "1": 14},
+       "names": "Blaze; Ice-T (CPU)", "calibrated": true,
+       "note": "macOS 2026-10-14, at The Pit with --expect-character 0:4 1:14. Presses 2 s apart; a second right 1 s after the first was not taken"}
+    ]
+  },
+  "story_points": [
+    {"id": "new-profile", "how": "no Story save: Main menu -> Story with a new user ID", "route": "intro",
+     "cutscenes": "the opening movies and the prologue's in-engine scenes, then the character creator"},
+    {"id": "crib", "how": "a profile past the prologue; Story -> the crib", "route": "crib"},
+    {"id": "gym", "how": "crib -> Map -> Shop District -> Stapleton Athletics", "route": "gym"}
+  ],
+  "cutscenes": {
+    "files": "assets/cinema/*.viv in the dump: sc00 to sc21 and the gf* set (docs/research/widescreen-game-cameras.md, section 4.2)",
+    "subsystem": "CINEMA::CCinemaSubsystem::LoadScene (its assert strings start near guest 0x29C715); the cinema update sub_00078A40 -> sub_0005BE50 -> the camera sampler sub_00070DF0",
+    "loader": "sub_00073FD0 (thiscall, the scene's name as its first argument) opens assets/nis_<name>.bin and assets/cinema/<name>.viv; its _enter hook logs every scene as [SCENE] loading <name> and as a recorder 'cinema' event",
+    "view_signal": "view mode 1 (sub_0001A4E0, a 'view' event with cutscene=true) is set by some shots only: once in sc00, never in sc05 on macOS 2026-10-14. The 'cinema' event is the reliable signal",
+    "launch_command": null,
+    "launch_note": "No front-end command names a scene (funccall-catalog: 444 commands). Scenes are played by the game's own developer cinema mode instead, in its developer run module rebuilt from the host (docs/research/dev-module-revival.md).",
+    "launcher": "RECOMP_SCENE=<name or number>: the developer run module starts at the title screen, plays the scene, and the game returns to the main menu (src/hooks/dev_module.c, scene_launcher.c). `scenarios.py scene <name>` does one, `scenarios.py scenes all` the tour; the overlay's Debug tab has a picker. No save, profile or menu is involved",
+    "calibrated": true
+  }
+}

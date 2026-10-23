@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "validated_live": false,
+  "input_clock": "host-seconds",
+  "timeout_seconds": 300,
+  "shots": "@getscreeninfo(story/crib,9,@getscreeninfo(story/gym,13,23",
+  "phases": [
+    {
+      "name": "main-menu",
+      "anchor": "getscreeninfo(intmain/mainmenu",
+      "commands": [{"button": "a", "at": 6}]
+    },
+    {
+      "name": "profile-selector",
+      "anchor": "getscreeninfo(options/userid",
+      "commands": [{"button": "down", "at": 4}, {"button": "a", "at": 7}]
+    },
+    {
+      "name": "crib",
+      "anchor": "getscreeninfo(story/crib",
+      "commands": [
+        {"button": "down", "at": 4}, {"button": "a", "at": 6},
+        {"button": "a", "at": 10}, {"button": "a", "at": 16},
+        {"button": "down", "at": 24}, {"button": "a", "at": 29}
+      ]
+    },
+    {
+      "name": "gym",
+      "anchor": "getscreeninfo(story/gym",
+      "after": 10,
+      "commands": [
+        {"button": "down", "at": 4}, {"button": "down", "at": 6},
+        {"button": "a", "at": 9}, {"button": "x", "at": 16}
+      ]
+    }
+  ]
+}

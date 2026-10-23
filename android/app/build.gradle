@@ -1,0 +1,68 @@
+plugins {
+    id "com.android.application"
+}
+
+def vendor = file("../vendor")
+
+android {
+    namespace "org.defjamffny.android"
+    compileSdk 34
+    lint { checkReleaseBuilds false; abortOnError false }
+    ndkVersion project.findProperty("defjamNdkVersion") ?: "28.2.13676358"
+
+    defaultConfig {
+        applicationId "org.defjamffny.android"
+        minSdk 29
+        targetSdk 34
+        versionCode 19
+        versionName "0.5.5-v19-packets"
+        ndk { abiFilters "arm64-v8a" }
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared", "-DDEFJAM_BUILD_GAME=ON"
+                cFlags "-O2"
+                cppFlags "-O2"
+                targets "main", "SDL3-shared", "main_hook", "hook_impl"
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+            externalNativeBuild { cmake { arguments "-DCMAKE_BUILD_TYPE=RelWithDebInfo" } }
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+            externalNativeBuild { cmake { arguments "-DCMAKE_BUILD_TYPE=Release" } }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "../../CMakeLists.txt"
+            version "3.31.6"
+        }
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs += new File(vendor, "SDL/android-project/app/src/main/java")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // AdrenoTools needs the hook libraries extracted on disk so it can
+            // build an isolated linker namespace around the selected driver.
+            useLegacyPackaging true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
