@@ -1,6 +1,6 @@
 # Credits and third-party notices
 
-**Android port maintainer: Raylander (contatg).**
+**Android port maintainer: contatg.**
 
 Project: https://github.com/contatg/Def-Jam-Android-Native-Port
 
