@@ -5,13 +5,13 @@ An experimental native Android ARM64 port of **Def Jam: Fight for NY**, based on
 
 ## Bring your own original game
 
-**The original Xbox game and its disc contents are not included.** This source repository and its
-patches do not distribute ISO/XISO disc images, `default.xbe`, extracted game folders, music,
-textures, or save files. This project provides a way to run the game using the data from **your own
+**The original Xbox game is not included.** This source repository and its
+patches do not distribute ISO/XISO disc images, `default.xbe`, the extracted game data directory,
+music archives, or save files. This project provides a way to run the game using the data from **your own
 original Xbox disc or an original ISO you own**. You must supply and extract that data yourself.
 An APK by itself does not provide the original game.
 
-The launcher artwork is included for application identification only. Def Jam, Xbox, the original
+Launcher and application artwork is included for identification only. Def Jam, Xbox, the original
 game, characters, logos and artwork belong to their respective owners. This is an unofficial
 community project and is not affiliated with or endorsed by the original publishers or platform owners.
 The source license does not grant rights to the original game's artwork or content.
