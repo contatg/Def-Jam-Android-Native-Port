@@ -4,11 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      apk:
-        description: Compilar APK completo com os fontes privados configurados nos secrets
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -42,66 +37,3 @@ jobs:
           tests/unit/test_android_v7_native.py
           tests/unit/test_android_vertex_parallel.py
           tests/unit/test_android_ci_sources.py
-
-  apk:
-    name: APK completo privado
-    if: github.event_name == 'workflow_dispatch' && inputs.apk
-    needs: host-checks
-    runs-on: windows-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - name: Manter compilacao e artefato em repositorio privado
-        shell: pwsh
-        env:
-          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
-        run: |
-          if ($env:REPOSITORY_PRIVATE -ne 'true') { throw 'O build de jogo completo exige repositorio privado.' }
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Conferir e preparar fontes gerados privados
-        env:
-          DEFJAM_GUEST_SOURCES_URL: ${{ secrets.DEFJAM_GUEST_SOURCES_URL }}
-          DEFJAM_GUEST_SOURCES_SHA256: ${{ secrets.DEFJAM_GUEST_SOURCES_SHA256 }}
-        run: python android/ci_guest_sources.py
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
-      - name: Android SDK e NDK
-        shell: pwsh
-        run: |
-          & "$env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat" 'platforms;android-34' 'build-tools;34.0.0' 'ndk;28.2.13676358' 'cmake;3.31.6'
-          if ($LASTEXITCODE) { throw 'Falha ao preparar Android SDK/NDK.' }
-      - uses: actions/cache@v4
-        with:
-          path: |
-            android/vendor/SDL
-            android/vendor/imgui
-            android/vendor/shaderc
-            android/vendor/.ndk-version
-          key: android-deps-ndk28.2-${{ hashFiles('android/Preparar-Dependencias-Android.ps1') }}
-      - name: Preparar SDL, ImGui e shaderc
-        shell: pwsh
-        run: ./android/Preparar-Dependencias-Android.ps1 -NdkVersion '28.2.13676358'
-      - name: Compilar APK ARM64 Release
-        shell: pwsh
-        run: |
-          gradle -p android --no-daemon --max-workers=2 '-Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8' '-PdefjamNdkVersion=28.2.13676358' assembleRelease
-          if ($LASTEXITCODE) { throw 'Build Android falhou.' }
-      - name: Conferir bibliotecas do APK
-        shell: pwsh
-        run: |
-          python -c "import zipfile; z=zipfile.ZipFile('android/app/build/outputs/apk/release/app-release.apk'); required=['libmain.so','libSDL3.so','libmain_hook.so','libhook_impl.so']; assert all('lib/arm64-v8a/'+n in z.namelist() for n in required), 'APK incompleto'; print('Bibliotecas ARM64 presentes; gameplay ainda exige teste em aparelho.')"
-          if ($LASTEXITCODE) { throw 'APK incompleto.' }
-          Get-FileHash android/app/build/outputs/apk/release/app-release.apk -Algorithm SHA256
-      - uses: actions/upload-artifact@v4
-        with:
-          name: DefJam-Android-ARM64-v19
-          path: android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-          retention-days: 3

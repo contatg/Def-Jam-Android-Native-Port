@@ -135,20 +135,23 @@ Copie cada rodada diretamente do celular antes de abrir a próxima:
 & $adb pull /storage/emulated/0/DefJamFFNY/defjam-native.log "$env:USERPROFILE\Downloads\defjam-v19-luta.log"
 ```
 
-## GitHub
+## GitHub e APK do PC
 
-A pasta **github-source** contém o projeto de fontes preparado para um novo repositório privado,
-com o runtime local incluído e os avisos/licenças dos componentes. Ela exclui dados do jogo,
-fontes recompilados gerados, logs, builds, SDK, bibliotecas compiladas e caches. O workflow
-android-port.yml executa os fixtures host no push e oferece o build APK manual.
+O código foi enviado para o repositório privado
+[contatg/DefJamFFNY-Android](https://github.com/contatg/DefJamFFNY-Android).
+Os [11 testes de controles e runtime passaram no GitHub](https://github.com/contatg/DefJamFFNY-Android/actions/runs/39882940336).
 
-O build completo precisa dos .c/.h de **src/recomp/gen do seu PC**, ausentes nesta cópia. Configure
-os secrets `DEFJAM_GUEST_SOURCES_URL` (ZIP privado HTTPS) e `DEFJAM_GUEST_SOURCES_SHA256`.
-O ZIP deve conter somente esses .c/.h, incluindo recomp_dispatch.c. O helper verifica hash,
-limites, nomes e caminhos antes de extrair. Os fontes são usados só no runner efêmero; o artefato
-APK permanece no repositório privado por 3 dias. Não há publicação automática de release.
+Conforme o pedido mais recente, o APK será o arquivo já compilado no seu PC.
+Anexe **app-release.apk** para ele ser enviado à aba Releases. Não é necessário enviar fontes
+recompilados ou configurar secrets de compilação. Os dados da versão serão conferidos no APK recebido.
+O Actions agora verifica o código; não executa build de APK.
 
-Sem essas entradas, a etapa APK para explicitamente antes de baixar o SDK ou compilar. Um
-workflow de testes verde não significa APK pronto. O repositório privado foi criado em
-[contatg/DefJamFFNY-Android](https://github.com/contatg/DefJamFFNY-Android); o resultado real
-dos testes remotos e da tentativa de build será registrado após a execução.
+A tentativa anterior de build remoto parou por falta de inputs antes de iniciar SDK/Gradle e não
+gerou APK. Isso não altera o APK que você já compilou no PC. O ganho de FPS do v19 ainda depende
+de teste em aparelho com essa versão instalada.
+
+Após baixar ou compilar o APK, instale sem apagar saves:
+
+```powershell
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "android\app\build\outputs\apk\release\app-release.apk"
+```
