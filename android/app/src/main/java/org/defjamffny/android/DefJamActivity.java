@@ -106,9 +106,10 @@ public final class DefJamActivity extends SDLActivity {
         // silently re-enable experimental guest multicore on direct launch.
         args.add("--guest-cores=1");
         args.add("--native-cores=0");
-        args.add("--vk-async=" + (configuredBool("async_render", true) ? "1" : "0"));
-        args.add("--vertex-threads=" + (configuredBool("parallel_vertices", true)
-                ? 8 : 1));
+        // Fixed in both launcher and direct activity launches. Stale process
+        // preferences or old Intent bundles cannot change the rendering policy.
+        args.add("--vk-async=1");
+        args.add("--vertex-threads=1");
         int fps = configuredInt("fps_limit", 60);
         args.add("--framegen=0");
         args.add("--fps-limit=" + (fps >= 30 && fps <= 165 ? fps : 60));

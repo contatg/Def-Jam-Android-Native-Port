@@ -63,8 +63,6 @@ public final class LauncherActivity extends Activity {
     private TogglePill postEffects;
     private TogglePill hdTextures;
     private TogglePill showFps;
-    private TogglePill parallelVertices;
-    private TogglePill asyncRender;
     private TogglePill touchControls;
     private ValueSlider controlSize;
     private ValueSlider controlOpacity;
@@ -107,12 +105,10 @@ public final class LauncherActivity extends Activity {
             prefs().edit().putBoolean("framegen", false).putBoolean("parallel_vertices", false)
                     .putBoolean("v13_recovery", true).commit();
         }
-        if (!prefs().getBoolean("v18_native_parallel", false)) {
-            // v13 recovery disabled this option. The new native budget has
-            // its own scope and does not widen guest affinity.
-            prefs().edit().putBoolean("parallel_vertices", true).putInt("native_cores", 0)
-                    .putBoolean("v18_native_parallel", true).commit();
-        }
+        // Fixed mobile rendering policy. Replace old saved choices on every
+        // launcher start; neither setting is exposed as an editable control.
+        prefs().edit().putBoolean("async_render", true)
+                .putBoolean("parallel_vertices", false).commit();
         showLauncher();
     }
 
@@ -400,8 +396,6 @@ public final class LauncherActivity extends Activity {
         postEffects = toggle(p.getBoolean("post_effects", true));
         hdTextures = toggle(p.getBoolean("hd_textures", false));
         showFps = toggle(p.getBoolean("show_fps", true));
-        parallelVertices = toggle(p.getBoolean("parallel_vertices", true));
-        asyncRender = toggle(p.getBoolean("async_render", true));
         perf.addView(row("Internal resolution", scale));
         perf.addView(row("Aspect ratio", aspect));
         perf.addView(row("VSync", vsync));
@@ -409,8 +403,6 @@ public final class LauncherActivity extends Activity {
         perf.addView(row("Gamma and vignette", postEffects));
         perf.addView(row("HD textures / mods", hdTextures));
         perf.addView(row("Show FPS", showFps));
-        perf.addView(row("Parallel vertex preparation • experimental", parallelVertices));
-        perf.addView(row("Asynchronous rendering • restart game", asyncRender));
 
         boolean installed = installedDriverValid();
         String installedName = p.getString("driver_name", "Imported Turnip");
@@ -501,8 +493,6 @@ public final class LauncherActivity extends Activity {
         postEffects.setOnCheckedChanged(save);
         hdTextures.setOnCheckedChanged(save);
         showFps.setOnCheckedChanged(save);
-        parallelVertices.setOnCheckedChanged(save);
-        asyncRender.setOnCheckedChanged(save);
         touchControls.setOnCheckedChanged(save);
         controlSize.setOnValueChanged(save);
         controlOpacity.setOnValueChanged(save);
@@ -523,8 +513,8 @@ public final class LauncherActivity extends Activity {
                 .putBoolean("post_effects", postEffects.isChecked())
                 .putBoolean("hd_textures", hdTextures.isChecked())
                 .putBoolean("show_fps", showFps.isChecked())
-                .putBoolean("parallel_vertices", parallelVertices.isChecked())
-                .putBoolean("async_render", asyncRender.isChecked())
+                .putBoolean("parallel_vertices", false)
+                .putBoolean("async_render", true)
                 .putBoolean("touch_controls", touchControls.isChecked())
                 .putInt("control_layout", controlLayout.getSelectedItemPosition())
                 .putInt("control_size", controlSize.getProgress() + 70)
@@ -582,7 +572,9 @@ public final class LauncherActivity extends Activity {
         launch.putInt("guest_cores", 1);
         launch.putInt("native_cores", 0);
         launch.putInt("fps_limit", saved.getInt("fps_limit", 60));
-        for (String key : new String[] {"parallel_vertices", "async_render", "touch_controls", "show_fps", "use_custom_driver"})
+        launch.putBoolean("async_render", true);
+        launch.putBoolean("parallel_vertices", false);
+        for (String key : new String[] {"touch_controls", "show_fps", "use_custom_driver"})
             launch.putBoolean(key, saved.getBoolean(key, !key.equals("use_custom_driver")));
         launch.putString("driver_library", saved.getString("driver_library", ""));
         startActivity(new Intent(this, DefJamActivity.class).putExtra("defjam_launch", launch));

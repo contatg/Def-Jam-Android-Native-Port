@@ -48,11 +48,20 @@ public class LaunchSnapshot extends Parent {
         launch.data.put("async_render",true);
         Set<String> a=arguments(s);
         assert a.contains("--guest-cores=1") && a.contains("--native-cores=0");
-        assert a.contains("--vertex-threads=8") && a.contains("--fps-limit=30") && a.contains("--vk-async=1");
+        assert a.contains("--vertex-threads=1") && a.contains("--fps-limit=30") && a.contains("--vk-async=1");
         s.stale.data.put("guest_cores",7);assert arguments(s).contains("--guest-cores=1");
         launch.data.put("native_cores",0);launch.data.put("guest_cores",1);
-        a=arguments(s);assert a.contains("--vertex-threads=8") && a.contains("--guest-cores=1");
-        launch.data.put("parallel_vertices",false);assert arguments(s).contains("--vertex-threads=1");
+        a=arguments(s);assert a.contains("--vertex-threads=1") && a.contains("--guest-cores=1");
+        // Exercise every combination of legacy settings. Both fixed options
+        // ignore the snapshot, while FPS/driver configuration still uses it.
+        for (boolean oldAsync : new boolean[]{false,true}) {
+            for (boolean oldParallel : new boolean[]{false,true}) {
+                launch.data.put("async_render",oldAsync);
+                launch.data.put("parallel_vertices",oldParallel);
+                a=arguments(s);
+                assert a.contains("--vertex-threads=1") && a.contains("--vk-async=1");
+            }
+        }
         File driver=new File(s.directory,"gpu_driver/current/custom.so");driver.getParentFile().mkdirs();
         assert driver.createNewFile();
         launch.data.put("use_custom_driver",true);launch.data.put("driver_library","custom.so");
@@ -61,7 +70,7 @@ public class LaunchSnapshot extends Parent {
         launch.data.put("guest_cores",99);launch.data.put("native_cores",99);launch.data.put("fps_limit",29);
         a=arguments(s);assert a.contains("--guest-cores=1") && a.contains("--native-cores=0") && a.contains("--fps-limit=60");
         s.intent.bundle=null;
-        a=arguments(s);assert a.contains("--guest-cores=1") && a.contains("--native-cores=0") && a.contains("--fps-limit=165") && a.contains("--vk-async=0");
+        a=arguments(s);assert a.contains("--guest-cores=1") && a.contains("--native-cores=0") && a.contains("--fps-limit=165") && a.contains("--vk-async=1");
     }
 }
 '''

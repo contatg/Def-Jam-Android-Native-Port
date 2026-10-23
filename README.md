@@ -21,7 +21,7 @@ The source license does not grant rights to the original game's artwork or conte
 - Native Android ARM64 launcher and Vulkan rendering, with optional Turnip support.
 - Custom touch controls and an in-game wrench shortcut for the layout editor.
 - Separate menu controls, grouped D-pad editing, and START/ENTER navigation.
-- Asynchronous rendering, a simple FPS display, and saved graphics settings.
+- Always-enabled asynchronous rendering, a simple FPS display, and saved graphics settings.
 - One guest CPU for compatibility; native workers may use all permitted CPUs.
 - English launcher, editor, status messages and project documentation entry points.
 
@@ -56,9 +56,9 @@ GitHub Actions checks production control and runtime fixtures; it does not build
 private generated game sources. Passing code checks or compiling an APK does not prove gameplay,
 background/resume behavior, or a particular frame rate on a device.
 
-The latest branding source is **0.5.6-v20-branding**. It adds the requested icon, name and English UI;
-it does not change the v19 renderer, synchronization or performance settings. No 120/144/165 FPS
-performance guarantee or complete Black renderer transplant is claimed.
+The latest source is **0.5.7-v21-fixed-render**. Asynchronous rendering is always enabled and parallel
+vertex preparation is disabled. Neither setting is exposed in the launcher or an in-game menu.
+Other native workers retain their automatic CPU policy. No particular gameplay frame rate is guaranteed.
 
 ## Credits and licenses
 

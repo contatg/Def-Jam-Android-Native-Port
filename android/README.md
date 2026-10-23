@@ -47,6 +47,8 @@ Control layouts, button mappings and existing saves remain compatible with previ
 
 ## Driver and diagnostics
 
+Asynchronous rendering is always enabled. Parallel vertex preparation is disabled; both settings are
+fixed and have no editable launcher or in-game option. Old saved choices are overridden at launch.
 System Vulkan is the default. Optional Turnip packages are for compatible Snapdragon/Adreno devices;
 a driver import failure falls back to the system driver. Graphics options persist in `settings.ini`.
 The FPS counter displays measured application frames and is not a promise of unlocked gameplay FPS.
