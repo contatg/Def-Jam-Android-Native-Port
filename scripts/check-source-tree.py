@@ -43,6 +43,8 @@ APPROVED_README_MEDIA = {
 # including their existing custom controls. Exact fingerprints only; no
 # general exception for game assets. The window icon is the unchanged D98 icon.
 APPROVED_ANDROID_ART = {
+    # User-provided launcher artwork explicitly requested for v20.
+    'android/app/src/main/res/drawable-nodpi/ic_launcher_art.jpg': '9829b96b8361af80b12c2da4d0a466627a580e71413e20a0e6c3fa5fdf94ab6e',
     'android/app/src/main/res/drawable-nodpi/ctl_agarrar.png': '3d446b6220ce0896174e1b5bb70210c846162a054ca2a79ffc50c166056a485e',
     'android/app/src/main/res/drawable-nodpi/ctl_chute.png': '77d208464e38598b422bd4e97703241553e3250e5c6d88f663ca9b4a4cd207e1',
     'android/app/src/main/res/drawable-nodpi/ctl_config.png': '626cc10020157f1e7461229555be120595f351dd39fa90c6ca4aafe21146779c',

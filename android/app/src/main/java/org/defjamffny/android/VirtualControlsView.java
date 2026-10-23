@@ -40,8 +40,8 @@ public final class VirtualControlsView extends View {
             ESPECIAL = 6, CORRER = 7, PAUSA = 8, CONFIG = 9, UP = 10, DOWN = 11, LEFT = 12, RIGHT = 13;
 
     private static final String[] NAMES = {
-        "Analógico esquerdo", "Analógico direito", "SOCO", "CHUTE", "AGARRAR", "DEFENDER",
-        "ESPECIAL", "CORRER", "START / PAUSA", "AJUSTES", "D-PAD (junto)", "Baixo", "Esquerda", "Direita"
+        "Left stick", "Right stick", "PUNCH", "KICK", "GRAPPLE", "BLOCK",
+        "SPECIAL", "RUN", "START / PAUSE", "SETTINGS", "D-PAD (grouped)", "Down", "Left", "Right"
     };
     private static final String[] SPRITE = {
         null, null, "ctl_soco", "ctl_chute", "ctl_agarrar", "ctl_defender", "ctl_especial",
@@ -423,11 +423,11 @@ public final class VirtualControlsView extends View {
 
     public String selectedInfo() {
         if (selected < 0) return null;
-        if (isDpad(selected)) return "D-PAD • mover e redimensionar junto" + (dpad.visible ? "" : " (oculto)");
+        if (isDpad(selected)) return "D-PAD • move and resize together" + (dpad.visible ? "" : " (hidden)");
         StringBuilder sb = new StringBuilder(NAMES[selected]);
         if (keyIdx[selected] >= 0 && !isStick(selected) && !isDpad(selected))
             sb.append(" → ").append(KEY_LABEL[keyIdx[selected]]);
-        sb.append(visible[selected] ? "" : "  (oculto)");
+        sb.append(visible[selected] ? "" : "  (hidden)");
         return sb.toString();
     }
 

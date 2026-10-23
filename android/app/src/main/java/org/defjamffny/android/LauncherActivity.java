@@ -256,7 +256,7 @@ public final class LauncherActivity extends Activity {
 
         private void setCheckedSilently(boolean value) {
             checked = value;
-            setText(value ? "LIGADO" : "DESLIGADO");
+            setText(value ? "ON" : "OFF");
             setTextColor(value ? BG : MUTED);
             setBackground(background(value ? GOLD : Color.rgb(29, 32, 38), 18,
                     value ? 0 : Color.rgb(61, 65, 74)));
@@ -341,44 +341,44 @@ public final class LauncherActivity extends Activity {
         hero.setGravity(Gravity.CENTER_VERTICAL);
         hero.setPadding(dp(10), 0, dp(22), 0);
         hero.addView(text("NEW YORK  /  ANDROID ARM64", 10, GOLD, true));
-        TextView title = text("DEF JAM\nFIGHT FOR NY", 31, Color.WHITE, true);
+        TextView title = text("Def Jam\nAndroid Native Port", 25, Color.WHITE, true);
         title.setLetterSpacing(-0.02f);
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-1, -2);
         tp.topMargin = dp(6);
         hero.addView(title, tp);
-        TextView build = text("Recompilação nativa • configuração local", 12, MUTED, false);
+        TextView build = text("Native Android port • local settings", 12, MUTED, false);
         LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1, -2);
         bp.topMargin = dp(7);
         hero.addView(build, bp);
 
         File xbe = new File(root(), "game/default.xbe");
-        TextView status = text(xbe.isFile() ? "●  Jogo encontrado" : "●  default.xbe não encontrado", 12,
+        TextView status = text(xbe.isFile() ? "●  Game found" : "●  default.xbe not found", 12,
                 xbe.isFile() ? GREEN : RED, true);
         LinearLayout.LayoutParams stp = new LinearLayout.LayoutParams(-1, -2);
         stp.topMargin = dp(22);
         hero.addView(status, stp);
         hero.addView(text(root().getAbsolutePath() + File.separator + "game", 10, MUTED, false));
 
-        Button play = button(hasStorage() ? "JOGAR" : "LIBERAR ARQUIVOS", true);
+        Button play = button(hasStorage() ? "PLAY" : "ALLOW FILE ACCESS", true);
         LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-1, dp(52));
         pp.topMargin = dp(20);
         hero.addView(play, pp);
         play.setOnClickListener(v -> play());
 
-        TextView hint = text("Dica: em celular, comece em 1x. 2x usa quatro vezes mais pixels.", 10, MUTED, false);
+        TextView hint = text("Tip: start at 1x on mobile. 2x renders four times as many pixels.", 10, MUTED, false);
         LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-1, -2);
         hp.topMargin = dp(10);
         hero.addView(hint, hp);
 
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
-        right.addView(text("Configurações", 22, Color.WHITE, true));
-        right.addView(text("As alterações são salvas na hora.", 11, MUTED, false));
+        right.addView(text("Settings", 22, Color.WHITE, true));
+        right.addView(text("Changes are saved immediately.", 11, MUTED, false));
 
-        LinearLayout perf = card("Desempenho", "1x é o perfil recomendado para manter FPS no celular");
+        LinearLayout perf = card("Performance", "Start at 1x for better performance on mobile");
         LinearLayout presets = new LinearLayout(this);
         presets.setGravity(Gravity.CENTER);
-        String[] names = {"Economia", "Equilibrado", "Qualidade"};
+        String[] names = {"Performance", "Balanced", "Quality"};
         for (int i = 0; i < names.length; i++) {
             final int preset = i;
             Button b = button(names[i], false);
@@ -393,7 +393,7 @@ public final class LauncherActivity extends Activity {
 
         scale = spinner("1x • 480p", "2x • 960p", "3x • 1440p", "4x • 1920p");
         scale.setSelection(Math.max(0, Math.min(3, p.getInt("render_scale", 1) - 1)));
-        aspect = spinner("4:3 original", "Esticar", "Widescreen automático", "16:9", "Tela cheia (aparelho)", "21:9 (experimental)"); // DEFJAM_V5
+        aspect = spinner("4:3 original", "Stretch", "Automatic widescreen", "16:9", "Device fullscreen", "21:9 (experimental)"); // DEFJAM_V5
         aspect.setSelection(Math.max(0, Math.min(5, p.getInt("aspect", 2))));
         vsync = toggle(p.getBoolean("vsync", false));
         smooth = toggle(p.getBoolean("smooth", true));
@@ -402,34 +402,34 @@ public final class LauncherActivity extends Activity {
         showFps = toggle(p.getBoolean("show_fps", true));
         parallelVertices = toggle(p.getBoolean("parallel_vertices", true));
         asyncRender = toggle(p.getBoolean("async_render", true));
-        perf.addView(row("Resolução interna", scale));
-        perf.addView(row("Formato da imagem", aspect));
+        perf.addView(row("Internal resolution", scale));
+        perf.addView(row("Aspect ratio", aspect));
         perf.addView(row("VSync", vsync));
-        perf.addView(row("Filtro suave", smooth));
-        perf.addView(row("Gamma e vinheta", postEffects));
-        perf.addView(row("Texturas HD/mods", hdTextures));
-        perf.addView(row("Mostrar FPS", showFps));
-        perf.addView(row("Preparar vértices em paralelo • experimental", parallelVertices));
-        perf.addView(row("Renderização assíncrona • reiniciar jogo", asyncRender));
+        perf.addView(row("Smooth filtering", smooth));
+        perf.addView(row("Gamma and vignette", postEffects));
+        perf.addView(row("HD textures / mods", hdTextures));
+        perf.addView(row("Show FPS", showFps));
+        perf.addView(row("Parallel vertex preparation • experimental", parallelVertices));
+        perf.addView(row("Asynchronous rendering • restart game", asyncRender));
 
         boolean installed = installedDriverValid();
-        String installedName = p.getString("driver_name", "Turnip importado");
-        LinearLayout gpu = card("Driver Vulkan", "Turnip é opcional e indicado apenas para Snapdragon/Adreno");
+        String installedName = p.getString("driver_name", "Imported Turnip");
+        LinearLayout gpu = card("Vulkan driver", "Optional Turnip driver for Snapdragon/Adreno devices");
         driver = installed
-                ? spinner("Sistema • recomendado", "Turnip • " + installedName)
-                : spinner("Sistema • recomendado");
+                ? spinner("System • recommended", "Turnip • " + installedName)
+                : spinner("System • recommended");
         boolean custom = installed && p.getBoolean("use_custom_driver", false);
         driver.setSelection(custom ? 1 : 0);
-        gpu.addView(row("Driver ativo", driver));
+        gpu.addView(row("Active driver", driver));
         TextView driverStatus = text(installed
-                        ? "● Pacote instalado: " + p.getString("driver_library", "")
-                        : "Nenhum pacote Turnip instalado", 10, installed ? GREEN : MUTED, false);
+                        ? "● Installed package: " + p.getString("driver_library", "")
+                        : "No Turnip package installed", 10, installed ? GREEN : MUTED, false);
         LinearLayout.LayoutParams dsp = new LinearLayout.LayoutParams(-1, -2);
         dsp.topMargin = dp(2);
         gpu.addView(driverStatus, dsp);
         LinearLayout driverButtons = new LinearLayout(this);
-        Button importDriver = button(installed ? "Trocar ZIP" : "Importar Turnip (.zip)", false);
-        Button removeDriver = button("Remover", false);
+        Button importDriver = button(installed ? "Replace ZIP" : "Import Turnip (.zip)", false);
+        Button removeDriver = button("Remove", false);
         removeDriver.setEnabled(installed);
         removeDriver.setAlpha(installed ? 1f : .4f);
         LinearLayout.LayoutParams ibp = new LinearLayout.LayoutParams(0, dp(40), 1);
@@ -443,21 +443,21 @@ public final class LauncherActivity extends Activity {
         importDriver.setOnClickListener(v -> chooseDriverZip());
         removeDriver.setOnClickListener(v -> removeDriver());
 
-        LinearLayout controls = card("Controles na tela", "Tamanho limitado à área útil para não cortar nem sobrepor");
+        LinearLayout controls = card("Touch controls", "Controls are kept inside the usable screen area");
         touchControls = toggle(p.getBoolean("touch_controls", true));
-        controlLayout = spinner("Clássico", "Compacto", "Canhoto");
+        controlLayout = spinner("Classic", "Compact", "Left-handed");
         controlLayout.setSelection(Math.max(0, Math.min(2, p.getInt("control_layout", 1))));
         controlSize = seek(50, p.getInt("control_size", 90) - 70, 70);
         controlOpacity = seek(70, p.getInt("control_opacity", 58) - 20, 20);
         deadzone = seek(35, p.getInt("deadzone", 15), 0);
         rumble = seek(100, p.getInt("rumble", 75), 0);
-        controls.addView(row("Ativar controles", touchControls));
+        controls.addView(row("Enable controls", touchControls));
         controls.addView(row("Layout", controlLayout));
-        controls.addView(row("Tamanho (70–120%)", controlSize));
-        controls.addView(row("Opacidade (20–90%)", controlOpacity));
+        controls.addView(row("Size (70–120%)", controlSize));
+        controls.addView(row("Opacity (20–90%)", controlOpacity));
         controls.addView(row("Deadzone", deadzone));
-        controls.addView(row("Vibração", rumble));
-        Button editControls = button("Editar controles na tela", true);
+        controls.addView(row("Vibration", rumble));
+        Button editControls = button("Edit touch controls", true);
         LinearLayout.LayoutParams ecp = new LinearLayout.LayoutParams(-1, dp(40));
         ecp.topMargin = dp(7);
         controls.addView(editControls, ecp);
@@ -555,8 +555,8 @@ public final class LauncherActivity extends Activity {
             postEffects.setChecked(true);
         }
         saveUiPreferences();
-        Toast.makeText(this, preset == 0 ? "Economia ativada"
-                : preset == 1 ? "Equilibrado ativado" : "Qualidade ativada", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, preset == 0 ? "Performance preset enabled"
+                : preset == 1 ? "Balanced preset enabled" : "Quality preset enabled", Toast.LENGTH_SHORT).show();
     }
 
     private void play() {
@@ -567,14 +567,14 @@ public final class LauncherActivity extends Activity {
         File game = new File(root(), "game");
         game.mkdirs();
         if (!new File(game, "default.xbe").isFile()) {
-            Toast.makeText(this, "default.xbe não encontrado em " + game, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "default.xbe not found in " + game, Toast.LENGTH_LONG).show();
             return;
         }
         saveUiPreferences();
         try {
             saveIni();
         } catch (Exception e) {
-            Toast.makeText(this, "Não consegui salvar settings.ini: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Could not save settings.ini: " + e.getMessage(), Toast.LENGTH_LONG).show();
             return;
         }
         Bundle launch = new Bundle();
@@ -684,7 +684,7 @@ public final class LauncherActivity extends Activity {
         if (requestCode != DRIVER_REQUEST || resultCode != RESULT_OK || data == null || data.getData() == null)
             return;
         Uri uri = data.getData();
-        Toast.makeText(this, "Validando pacote Turnip…", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Validating Turnip package…", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             try {
                 DriverInfo info = installDriver(uri);
@@ -695,41 +695,41 @@ public final class LauncherActivity extends Activity {
                         .commit();
                 runOnUiThread(() -> {
                     showLauncher();
-                    Toast.makeText(this, "Turnip instalado. Se falhar, o app volta ao driver do sistema.",
+                    Toast.makeText(this, "Turnip installed. If loading fails, the app falls back to the system driver.",
                             Toast.LENGTH_LONG).show();
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this,
-                        "Pacote Turnip inválido: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        "Invalid Turnip package: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }, "TurnipImport").start();
     }
 
     private DriverInfo installDriver(Uri uri) throws Exception {
         File base = new File(getFilesDir(), "gpu_driver");
-        if (!base.exists() && !base.mkdirs()) throw new Exception("não foi possível criar a pasta privada");
+        if (!base.exists() && !base.mkdirs()) throw new Exception("could not create the private directory");
         File stage = new File(base, "incoming-" + System.nanoTime());
-        if (!stage.mkdirs()) throw new Exception("não foi possível preparar a importação");
+        if (!stage.mkdirs()) throw new Exception("could not prepare import");
         long total = 0;
         int entries = 0;
         InputStream source = getContentResolver().openInputStream(uri);
-        if (source == null) throw new Exception("arquivo não pôde ser aberto");
+        if (source == null) throw new Exception("could not open file");
         try (InputStream input = source; ZipInputStream zip = new ZipInputStream(input)) {
             ZipEntry entry;
             byte[] buffer = new byte[64 * 1024];
             while ((entry = zip.getNextEntry()) != null) {
-                if (++entries > MAX_DRIVER_ENTRIES) throw new Exception("ZIP possui arquivos demais");
+                if (++entries > MAX_DRIVER_ENTRIES) throw new Exception("too many files in ZIP");
                 if (entry.isDirectory()) continue;
                 String leaf = new File(entry.getName().replace('\\', '/')).getName();
                 String lower = leaf.toLowerCase(Locale.ROOT);
                 if (leaf.isEmpty() || !(lower.endsWith(".so") || lower.equals("meta.json"))) continue;
                 File out = new File(stage, leaf);
-                if (out.exists()) throw new Exception("nome duplicado no ZIP: " + leaf);
+                if (out.exists()) throw new Exception("duplicate filename in ZIP: " + leaf);
                 try (FileOutputStream stream = new FileOutputStream(out)) {
                     int n;
                     while ((n = zip.read(buffer)) != -1) {
                         total += n;
-                        if (total > MAX_DRIVER_BYTES) throw new Exception("ZIP descompactado excede 512 MB");
+                        if (total > MAX_DRIVER_BYTES) throw new Exception("unpacked ZIP exceeds 512 MB");
                         stream.write(buffer, 0, n);
                     }
                 }
@@ -753,7 +753,7 @@ public final class LauncherActivity extends Activity {
                 meta = new JSONObject(new String(Files.readAllBytes(metaFile.toPath()), StandardCharsets.UTF_8));
             } catch (Exception ignored) {
                 deleteTree(stage);
-                throw new Exception("meta.json corrompido");
+                throw new Exception("invalid meta.json");
             }
         }
         String requested = meta == null ? "" : new File(meta.optString("libraryName", "")).getName();
@@ -761,18 +761,18 @@ public final class LauncherActivity extends Activity {
         if (library == null || !library.isFile()) library = findDriverLibrary(stage);
         if (library == null) {
             deleteTree(stage);
-            throw new Exception("biblioteca Vulkan não encontrada");
+            throw new Exception("Vulkan library not found");
         }
         if (!isArm64Elf(library)) {
             deleteTree(stage);
-            throw new Exception("driver não é Android ARM64");
+            throw new Exception("driver is not Android ARM64");
         }
         int minApi = meta == null ? 0 : meta.optInt("minApi", 0);
         if (minApi > Build.VERSION.SDK_INT) {
             deleteTree(stage);
-            throw new Exception("driver exige Android API " + minApi);
+            throw new Exception("driver requires Android API " + minApi);
         }
-        String name = meta == null ? "Turnip importado" : meta.optString("name", "Turnip importado");
+        String name = meta == null ? "Imported Turnip" : meta.optString("name", "Imported Turnip");
         String version = meta == null ? "" : meta.optString("driverVersion",
                 meta.optString("packageVersion", ""));
         if (!version.isEmpty()) name = name + " " + version;
@@ -783,12 +783,12 @@ public final class LauncherActivity extends Activity {
         deleteTree(backup);
         if (current.exists() && !current.renameTo(backup)) {
             deleteTree(stage);
-            throw new Exception("não foi possível substituir o driver anterior");
+            throw new Exception("could not replace the previous driver");
         }
         if (!stage.renameTo(current)) {
             if (backup.exists()) backup.renameTo(current);
             deleteTree(stage);
-            throw new Exception("não foi possível ativar o pacote");
+            throw new Exception("could not activate the package");
         }
         deleteTree(backup);
         return new DriverInfo(library.getName(), name);
@@ -831,7 +831,7 @@ public final class LauncherActivity extends Activity {
         prefs().edit().remove("driver_library").remove("driver_name")
                 .putBoolean("use_custom_driver", false).commit();
         showLauncher();
-        Toast.makeText(this, "Driver removido. Vulkan do sistema selecionado.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Driver removed. System Vulkan selected.", Toast.LENGTH_SHORT).show();
     }
 
     private static void deleteTree(File file) {

@@ -1,70 +1,62 @@
-# Def Jam FFNY Android ARM64 — build local
+# Android ARM64 build
 
-Este bring-up usa o runtime e o Vulkan do próprio Def Jam. O Android fornece
-somente a janela SDL3, ciclo de vida e caminhos de armazenamento. Nenhum arquivo
-do jogo entra no projeto ou no APK público.
+## Requirements
 
-## Dependências locais
+- Windows PowerShell, Python, Git, JDK 17, Gradle 8.7, Android SDK and a compatible Android NDK.
+- The project's existing Android dependencies, or internet access to prepare them.
+- Your own supported original Xbox game dump. No game disc, ISO, XBE or extracted game content is included.
 
-O build nunca usa `git`. Na primeira execução, o script de preparação baixa
-ZIPs de versão fixa e os guarda em `android/vendor/packages`:
+Keep your extracted game at `C:\Games\DefJamFFNY-data\extracted`, including your own
+`default.xbe`. `scripts/verify-dump.py` checks that it matches the supported original USA version.
+The local compiler can generate the private game C/H files from your own dump when they are missing.
+Do not upload your disc, game data, saves or generated game C/H files to the source repository.
 
-- SDL 3.4.16 em `android/vendor/SDL`;
-- Dear ImGui 1.92.9b em `android/vendor/imgui`;
-- shaderc é compilado localmente a partir da cópia incluída no NDK.
+## Compile
 
-Para uma máquina sem internet, baixe antes os ZIPs do SDL e ImGui em outro PC e rode:
-
-```powershell
-.\android\Preparar-Dependencias-Android.ps1 -SDLZip "C:\pacotes\SDL.zip" -ImGuiZip "C:\pacotes\imgui.zip"
-```
-
-Também são necessários no PC: JDK 17, Android SDK 34, um NDK instalado,
-CMake 3.31.6, Python e Gradle já instalados ou armazenados no cache local.
-
-## Dump
-
-Use somente o dump USA verificado. A pasta passada em `-DataDir` deve conter:
-
-```text
-<DataDir>/extracted/default.xbe
-<DataDir>/extracted/assets/
-<DataDir>/extracted/audio/
-...
-```
-
-O script recusa outro `default.xbe`. A análise e o código recompilado ficam
-somente no computador e continuam ignorados pelo controle de versão.
-
-## Compilar
-
-No PowerShell:
+Open PowerShell in the project directory:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-cd C:\caminho\DefJamFFNY-recomp
-.\android\Compilar-DefJam-Android.ps1 -DataDir "C:\Games\DefJamFFNY-data" -Variant Debug
+Set-ExecutionPolicy -Scope Process Bypass -Force
+$env:Path = "C:\dev\gradle-8.7\bin;$env:Path"
+.\android\Compilar-DefJam-Android.ps1 -DataDir "C:\Games\DefJamFFNY-data" -Variant Release
 ```
 
-Use `-Regenerate` depois de alterar o lifter, os símbolos ou o dump. Mudanças
-apenas no host Android não precisam repetir a recompilação do XBE.
+The build script checks the original dump, reuses or regenerates your local game sources,
+prepares missing Android dependencies and invokes Gradle. Its default Gradle invocation uses
+one worker and a bounded Java heap. It keeps your existing settings and saves.
 
-## Celular
+Output: `android/app/build/outputs/apk/release/app-release.apk`.
 
-O aplicativo cria:
+## Install
 
-```text
-/storage/emulated/0/DefJamFFNY/game
-```
-
-Copie para essa pasta o dump extraído já verificado. Configurações, saves,
-logs e cache ficam em `/storage/emulated/0/DefJamFFNY`.
-
-Instale e colete o Logcat com:
+Connect your Android device with USB debugging authorized, then run:
 
 ```powershell
-.\android\Instalar-e-Coletar-Logs.ps1 -Apk ".\android\app\build\outputs\apk\debug\app-debug.apk"
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "android\app\build\outputs\apk\release\app-release.apk"
 ```
 
-O primeiro marco é o APK carregar `libmain.so` e iniciar o Vulkan. Compilar o
-APK não comprova menu ou gameplay; isso precisa do log e de teste no aparelho.
+The package ID remains `org.defjamffny.android`. The app is named **Def Jam Android Native Port**.
+The supplied launcher image is referenced by both legacy and adaptive Android icons.
+
+## Game data and controls
+
+The device data root stays `/storage/emulated/0/DefJamFFNY`. Place the extracted game in its `game`
+subdirectory using your existing installation procedure. Allow storage access in the launcher.
+Use the wrench icon to edit controls in menus or during a fight. Pause with START before editing.
+Control layouts, button mappings and existing saves remain compatible with previous builds.
+
+## Driver and diagnostics
+
+System Vulkan is the default. Optional Turnip packages are for compatible Snapdragon/Adreno devices;
+a driver import failure falls back to the system driver. Graphics options persist in `settings.ini`.
+The FPS counter displays measured application frames and is not a promise of unlocked gameplay FPS.
+
+The game runs in `org.defjamffny.android:game`, separately from the launcher. Pull the real phone log:
+
+```powershell
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" pull /storage/emulated/0/DefJamFFNY/defjam-native.log "$env:USERPROFILE\Downloads\defjam-native.log"
+```
+
+A PC-side log may be stale and is not a substitute for the current phone log.
+A successful build is not proof that opening, loading, gameplay and background/resume all work.
+Test those stages on the intended device and report the actual log and version.

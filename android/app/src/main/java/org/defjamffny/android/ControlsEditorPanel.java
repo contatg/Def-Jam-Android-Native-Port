@@ -72,12 +72,12 @@ public final class ControlsEditorPanel extends FrameLayout {
 
         Button minus = button("  −  ", false);
         Button plus = button("  +  ", false);
-        Button map = button("Trocar botão", false);
-        Button vis = button("Mostrar/ocultar", false);
-        Button choose = button("Escolher", false);
-        Button reset = button("Padrão", false);
-        Button cancel = button("Cancelar", false);
-        Button save = button("Salvar", true);
+        Button map = button("Remap button", false);
+        Button vis = button("Show/hide", false);
+        Button choose = button("Select", false);
+        Button reset = button("Default", false);
+        Button cancel = button("Cancel", false);
+        Button save = button("Save", true);
 
         LinearLayout.LayoutParams r1 = new LinearLayout.LayoutParams(-2, -2);
         r1.topMargin = dp(6);
@@ -96,14 +96,14 @@ public final class ControlsEditorPanel extends FrameLayout {
         plus.setOnClickListener(v -> view.scaleSelected(1.1f));
         map.setOnClickListener(v -> view.cycleKey());
         vis.setOnClickListener(v -> view.toggleVisible());
-        choose.setOnClickListener(v -> new AlertDialog.Builder(context).setTitle("Selecionar controle")
+        choose.setOnClickListener(v -> new AlertDialog.Builder(context).setTitle("Select control")
                 .setItems(VirtualControlsView.controlNames(), (d, which) -> view.selectControl(which)).show());
         reset.setOnClickListener(v -> view.resetAll());
         cancel.setOnClickListener(v -> onCanceled.run());
         save.setOnClickListener(v -> {
             SharedPreferences p = context.getSharedPreferences("launcher", Context.MODE_PRIVATE);
             if (view.save(p)) onSaved.run();
-            else android.widget.Toast.makeText(context, "Não foi possível salvar. Tente novamente.", android.widget.Toast.LENGTH_LONG).show();
+            else android.widget.Toast.makeText(context, "Could not save. Please try again.", android.widget.Toast.LENGTH_LONG).show();
         });
         view.setOnSelectionChanged(this::updateHint);
         updateHint();
@@ -112,8 +112,8 @@ public final class ControlsEditorPanel extends FrameLayout {
     private void updateHint() {
         String n = view.selectedInfo();
         hint.setText(n == null
-                ? "Toque num controle e arraste. − e + mudam o tamanho; \"Trocar botão\" muda qual botão do jogo ele aperta."
-                : n + "  •  arraste para mover");
+                ? "Tap and drag a control. Use − and + to resize; \"Remap button\" changes its game input."
+                : n + "  •  drag to move");
     }
 
 }

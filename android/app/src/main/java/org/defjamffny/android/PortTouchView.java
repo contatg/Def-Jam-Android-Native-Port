@@ -10,7 +10,7 @@ public final class PortTouchView extends View {
     private float x, y;
     public PortTouchView(DefJamActivity context) {
         super(context); setFocusable(false);
-        setContentDescription("Menu do port: toque nos itens e arraste as barras para ajustar ou rolar.");
+        setContentDescription("Port menu: tap items and drag sliders to adjust or scroll.");
     }
     private float normalized(float v, int extent) {
         return Math.max(0f, Math.min(1f, extent > 1 ? v / (extent - 1f) : .5f));

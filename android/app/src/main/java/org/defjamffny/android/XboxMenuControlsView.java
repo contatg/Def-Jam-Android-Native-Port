@@ -27,7 +27,7 @@ public final class XboxMenuControlsView extends View {
     private float radius;
     public XboxMenuControlsView(DefJamActivity context){
         super(context);activity=context;setFocusable(false);
-        setContentDescription("A, B e direcional para navegar nos menus");
+        setContentDescription("Use A, B and the D-pad to navigate menus");
         for(int i=0;i<boxes.length;i++)boxes[i]=new RectF();
     }
     private float dp(float v){return v*getResources().getDisplayMetrics().density;}

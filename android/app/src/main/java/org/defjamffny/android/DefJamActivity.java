@@ -56,7 +56,7 @@ public final class DefJamActivity extends SDLActivity {
                     float fps = nativeGetFps();
                     String rate = fps > .1f ? String.format(Locale.US, "%.1f FPS", fps) : "-- FPS";
                     fpsView.setText(rate);
-                } catch (UnsatisfiedLinkError e) { fpsView.setText("FPS indisponível"); }
+                } catch (UnsatisfiedLinkError e) { fpsView.setText("FPS unavailable"); }
                 hudHandler.postDelayed(this, 500);
             }
         }
@@ -219,7 +219,7 @@ public final class DefJamActivity extends SDLActivity {
         if (fpsView != null) fpsView.setVisibility(View.GONE);
         editor = new ControlsEditorPanel(this, () -> closeControlsEditor(true), () -> closeControlsEditor(false));
         addContentView(editor, new ViewGroup.LayoutParams(-1, -1));
-        android.widget.Toast.makeText(this, "Pause pelo START antes de editar; o jogo continua ao fundo.", android.widget.Toast.LENGTH_LONG).show();
+        android.widget.Toast.makeText(this, "Pause with START before editing; the game keeps running in the background.", android.widget.Toast.LENGTH_LONG).show();
     }
     private void closeControlsEditor(boolean saved) {
         if (editor == null) return;

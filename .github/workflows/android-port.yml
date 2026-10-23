@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   host-checks:
-    name: Controles e runtime sem dados do jogo
+    name: Controls and runtime without game data
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -23,7 +23,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - run: python -m pip install pytest
-      - name: Fixtures de producao C/Java
+      - name: Production C/Java fixtures
         env:
           ASAN_OPTIONS: detect_leaks=0
         run: >-
