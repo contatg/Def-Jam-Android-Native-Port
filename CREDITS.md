@@ -4,6 +4,12 @@
 
 Project: https://github.com/contatg/Def-Jam-Android-Native-Port
 
+## Online multiplayer
+
+**sweeax-exe and the FFNY Online contributors created FFNY Online, the upstream online multiplayer implementation.** This Android port adapts their networking code. [Original FFNY Online project](https://github.com/sweeax-exe/ffny-online) · [MIT license](licenses/FFNY-Online-MIT.txt)
+
+## Recompilation and runtime
+
 Original static recompilation project: Vlad Yanhursky and contributors,
 https://github.com/vyanhursky/DefJamFFNY-recomp.
 
@@ -16,6 +22,7 @@ original Xbox game, upstream recompilation work or third-party components.
 
 ## Preserved license texts
 
+- [FFNY Online MIT license](licenses/FFNY-Online-MIT.txt)
 - [Original project license](LICENSE)
 - [xboxrecomp license](licenses/xboxrecomp-MIT.txt)
 - [xboxrecomp third-party notice](licenses/xboxrecomp-NOTICE.txt)

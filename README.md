@@ -4,10 +4,11 @@ An unofficial Android ARM64 port of **Def Jam: Fight for NY**.
 
 **Android port maintained by contatg.**
 
+**Online multiplayer is based on FFNY Online, created by sweeax-exe and the FFNY Online contributors.** See the [upstream project](https://github.com/sweeax-exe/ffny-online), its [MIT license](licenses/FFNY-Online-MIT.txt), and the [full credits](CREDITS.md).
+
 This repository is a documentation and release hub. Application source code,
 build projects and development workflows are not included in the current branch.
-The repository is private. Existing upstream and third-party licenses remain in effect;
-removing source files from this branch does not replace those licenses.
+The repository is public. Existing upstream and third-party licenses remain in effect.
 
 ## Your original game is required
 
