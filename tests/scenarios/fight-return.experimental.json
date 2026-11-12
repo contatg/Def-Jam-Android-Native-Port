@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "validated_live": false,
+  "input_clock": "host-seconds",
+  "bootstrap_route": "fight",
+  "timeout_seconds": 650,
+  "shots": "@game.startgame(,15,60,@getscreeninfo(battle/matchsm,4,@getscreeninfo(intmain/mainmenu#2,5",
+  "notes": "One on One Foundation -> results -> rewards -> No rematch -> fresh main menu. Requires live calibration. A results screen does not establish a KO reason or controlled-player victory. The #2 capture anchor is toolkit occurrence syntax; validate capture separately.",
+  "phases": [
+    {
+      "name": "fight",
+      "anchor": "game.startgame(",
+      "commands": [
+        {"button": "right", "at": 8, "hold_ms": 1200},
+        {"button": "x", "at": 10, "hold_ms": 150, "repeat": {"count": 50, "interval": 0.8}},
+        {"button": "y", "at": 10.4, "hold_ms": 150, "repeat": {"count": 50, "interval": 0.8}}
+      ]
+    },
+    {
+      "name": "results",
+      "anchor": "getscreeninfo(battle/matchsm",
+      "commands": [{"button": "a", "at": 5}]
+    },
+    {
+      "name": "rewards",
+      "anchor": "getscreeninfo(battle/reward",
+      "commands": [{"button": "a", "at": 5}]
+    },
+    {
+      "name": "no-rematch",
+      "anchor": "getscreeninfo(battle/rematch",
+      "commands": [{"button": "down", "at": 4}, {"button": "a", "at": 7}]
+    },
+    {
+      "name": "returned-main-menu",
+      "anchor": "getscreeninfo(intmain/mainmenu",
+      "commands": [],
+      "after": 6
+    }
+  ]
+}

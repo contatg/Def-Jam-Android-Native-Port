@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "defaults": {
+    "approved": false,
+    "model": "lanczos",
+    "scale": 4,
+    "padding": 8,
+    "alpha": "lanczos",
+    "bleed": false,
+    "wrap_u": false,
+    "wrap_v": false
+  },
+  "categories": {
+    "logos": {
+      "model": "lanczos",
+      "bleed": true
+    },
+    "ui": {
+      "model": "lanczos",
+      "bleed": true
+    },
+    "fighters": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "customization": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "crowd": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "cinematic-characters": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "cinematic-environments": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "environment-maps": {
+      "exclude": true
+    },
+    "effects": {
+      "exclude": true
+    },
+    "venues": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "props": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "animation": {
+      "model": "lanczos",
+      "scale": 2
+    },
+    "fonts": {
+      "exclude": true
+    },
+    "review": {
+      "exclude": true
+    }
+  },
+  "overrides": {
+    "c9b6be5e1c4e1e0f8d6e00721d5775d17a08b3ebd1a02c6883538e1334123443": {
+      "category": "logos",
+      "approved": true
+    },
+    "23cd51fe7eaca83608c73002278f9ee6f023f80fc7f217e0b8eb93f0dbbb56ed": {
+      "category": "logos",
+      "approved": true
+    },
+    "728c5f2f83bd20c149ca5124a9b72ad0df97a1b8616cd0d4198db5a34c71cdbc": {
+      "category": "ui",
+      "approved": true
+    }
+  }
+}

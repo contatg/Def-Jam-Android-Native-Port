@@ -6,7 +6,7 @@ Project: https://github.com/contatg/Def-Jam-Android-Native-Port
 
 ## Online multiplayer
 
-**sweeax-exe and the FFNY Online contributors created FFNY Online, the upstream online multiplayer implementation.** This Android port adapts their networking code. [Original FFNY Online project](https://github.com/sweeax-exe/ffny-online) · [MIT license](licenses/FFNY-Online-MIT.txt)
+**sweeax-exe and the FFNY Online contributors created FFNY Online, the upstream online multiplayer implementation.** This Android port adapts their networking code and language-pack tooling. contatg maintains the Android integration and the [room server adaptation](server/). [Original FFNY Online project](https://github.com/sweeax-exe/ffny-online) · [MIT license](licenses/FFNY-Online-MIT.txt)
 
 ## Recompilation and runtime
 
@@ -29,7 +29,11 @@ original Xbox game, upstream recompilation work or third-party components.
 - [GNU LGPL 2.1](licenses/LGPL-2.1.txt)
 - [SDL3 zlib license](licenses/SDL3-zlib.txt)
 
-Paths mentioned inside the original upstream notices refer to the original
-source project. This release hub does not contain those source directories.
-Removing the app source from this repository does not revoke existing license
-permissions or waive third-party distribution requirements.
+## Emulator, frame generation and graphics
+
+- **rfandango and contributors** developed hakuX. The integration and its pinned upstream sources are documented in [hakuX](third_party/hakux/).
+- **The412Banner and contributors** developed Win-FG. The port adapts it and the AMD FidelityFX optical-flow code. [Win-FG MIT license](tools/xboxrecomp/src/d3d/fg34/vendor/LICENSE) · [AMD notice](tools/xboxrecomp/src/d3d/fg34/vendor/NOTICE_FIDELITYFX_OPTICALFLOW.md)
+- **lsfg-vk and lsfg-vk-android contributors** wrote the MIT-licensed Vulkan LSFG integration used by the port. [Upstream and license details](tools/xboxrecomp/src/d3d/lsfg27/UPSTREAM.md)
+- **Rangga Casper and contributors** developed MostWanted-Android, credited for the FSR1/Vulkan presentation code used as a reference. [Bundled notices](android/app/src/main/assets/about/THIRD-PARTY-NOTICES.txt)
+
+Third-party components retain their respective licenses. See the [source guide](SOURCE.md) for the paths to the Android port and build tools.

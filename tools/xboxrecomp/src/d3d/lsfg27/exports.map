@@ -1,0 +1,4 @@
+{
+    global: defjam_lsfg27_create; defjam_lsfg27_record; defjam_lsfg27_destroy;
+    local: *;
+};

@@ -1,6 +1,7 @@
 MIT License
 
 Copyright (c) 2026 Vlad Yanhursky
+Copyright (c) 2026 contatg (Android port contributions)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ---
-This license covers the code in this repository only. tools/xboxrecomp is a
-separate MIT-licensed project that bundles LGPL-2.1+ components derived from
-xemu; see tools/xboxrecomp/LICENSE, NOTICE and LICENSES/. No game code or
-assets from Def Jam: Fight for NY are included or licensed here.
+The project and Android port contributions are licensed under MIT. Separate
+third-party works retain the licenses identified in their source files and
+CREDITS.md. These include FFNY Online (MIT), xboxrecomp (MIT with LGPL-2.1+
+xemu components) and hakuX (GPL-3.0-or-later). This license grants no rights
+to the original Def Jam: Fight for NY game, artwork or other game assets.

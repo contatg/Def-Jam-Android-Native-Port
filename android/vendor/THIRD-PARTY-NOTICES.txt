@@ -1,0 +1,11 @@
+Bundled source snapshots used only by the Android build:
+
+- volk, Copyright (c) 2018-2026 Arseny Kapoulkine, MIT License.
+  Source: https://github.com/zeux/volk
+- libadrenotools, Copyright (c) 2021 Billy Laws, BSD 2-Clause License.
+  Source: https://github.com/bylaws/libadrenotools
+- liblinkernsbypass, Copyright (c) 2021 Billy Laws, BSD 2-Clause License.
+  Source: https://github.com/bylaws/liblinkernsbypass
+
+Full license texts are stored beside each source tree. The Qualcomm KGSL UAPI
+header retains its SPDX Linux-syscall-note marker and upstream notices.

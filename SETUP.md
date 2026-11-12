@@ -2,6 +2,21 @@
 
 ## 1. Extract your own original disc or ISO
 
+The launcher now has **Import Xbox ISO**. Allow file access, choose a local,
+uncompressed `.iso` or `.xiso`, and keep the app open until it reports completion.
+It reads XDVDFS directly, checks the supported USA executable before extraction,
+then installs the full tree into `DefJamFFNY/game`. No PC extraction is needed for
+supported images. ZIP/RAR/7z and Xbox 360 images are not supported.
+
+The importer checks free space and shows extraction progress. Cancel or an error
+leaves the installed game in place and removes the current partial extraction.
+A completed import keeps any previous game as a `game-before-import-*` backup;
+it does not modify `save/`, `settings.ini`, control layouts or the selected driver.
+Keep enough space for the source ISO, the extracted files and any existing game.
+A process/device shutdown can interrupt the import; keep the app open and retry.
+
+Manual extraction remains available:
+
 Use your own original Xbox copy of **Def Jam: Fight for NY**. For the currently
 supported dump, the platform is the original Xbox and the region is USA (NTSC-U).
 An Xbox ISO/XISO must be extracted with a tool that understands Xbox disc images,

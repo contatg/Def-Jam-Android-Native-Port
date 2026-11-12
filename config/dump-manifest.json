@@ -1,0 +1,23 @@
+{
+  "$comment": "Expected properties of the user-supplied game dump. Nothing from the disc is stored in this repo. Verify with scripts/verify-dump.py.",
+  "title": "Def Jam: Fight for NY",
+  "platform": "Xbox (original)",
+  "region": "USA (NTSC-U)",
+  "title_id": "0x45410049",
+  "title_id_catalog": "EA-073",
+  "xbe": {
+    "filename": "default.xbe",
+    "size": 3284992,
+    "sha256": "31cc0d11f7c656b1a6f337fdf7d9bbaac9df11c324a2fb881f7eb639d4be00c2",
+    "pe_timestamp_utc": "2004-08-18T23:08:15Z",
+    "xdk_build": 5849,
+    "entry_point": "0x001F6357",
+    "base_addr": "0x00010000"
+  },
+  "required_paths": [
+    "default.xbe", "fighter.xml", "gamedata.xml", "gconfig.xml", "venue.xml",
+    "assets", "audio", "fonts", "motion", "movies", "screens"
+  ],
+  "expected_file_count": 118,
+  "expected_total_bytes_approx": 3023098199
+}

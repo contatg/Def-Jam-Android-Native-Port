@@ -1,0 +1,11 @@
+services:
+  defjam-online:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "27777:27777/udp"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    pids_limit: 64

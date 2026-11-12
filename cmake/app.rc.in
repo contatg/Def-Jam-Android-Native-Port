@@ -1,0 +1,35 @@
+// Windows resources for the game, the launcher and the setup: the shield icon (id 1, the one
+// Explorer, the taskbar and the window class use) and the file properties. Configured by
+// CMakeLists.txt and setup/CMakeLists.txt; the icon is branding/icon/defjam.ico.
+#include <winver.h>
+
+1 ICON "@RC_ICON@"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION @RC_VERSION_COMMA@
+ PRODUCTVERSION @RC_VERSION_COMMA@
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+ FILEFLAGS 0
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "vyanhursky"
+            VALUE "FileDescription", "@RC_DESCRIPTION@"
+            VALUE "FileVersion", "@RC_VERSION@"
+            VALUE "InternalName", "@RC_NAME@"
+            VALUE "LegalCopyright", "MIT licence; the game and its artwork belong to their rights holders"
+            VALUE "OriginalFilename", "@RC_NAME@.exe"
+            VALUE "ProductName", "Def Jam: Fight for NY - Recompiled"
+            VALUE "ProductVersion", "@RC_VERSION@"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END

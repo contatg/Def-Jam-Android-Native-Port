@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.20)
+project(input_map_test C)
+set(CMAKE_C_STANDARD 11)
+# The mapping rules alone: portable C, no SDL and no Windows headers.
+add_executable(input_map_test test_main.c ../../src/input/input_map.c)
+target_include_directories(input_map_test PRIVATE ../../src/input)
+if(NOT MSVC)
+    target_link_libraries(input_map_test PRIVATE m)
+endif()
+enable_testing()
+add_test(NAME input_map_test COMMAND input_map_test)

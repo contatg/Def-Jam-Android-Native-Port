@@ -1,0 +1,3 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:left="18dp" android:right="18dp" android:top="18dp" android:bottom="18dp" android:drawable="@drawable/ic_launcher_v1" />
+</layer-list>
