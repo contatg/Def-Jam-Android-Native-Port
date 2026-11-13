@@ -1045,7 +1045,7 @@ static void on_start(const uint8_t *b, int len)
 /* Code 10 collides between the bundled private-room extension and the public
  * relay's newer ErrUpdateRequired. Only an authenticated private-room request
  * on a non-project endpoint can be a password refusal. HELLO has no password. */
-static void netplay_relay_error132(int code)
+static void netplay_relay_error132(int code, const uint8_t *message, size_t message_len)
 {
     static const char *const why[] = { "", "No room with that code.", "That room is full.",
         "The other player has a different version of the game.", "That name is not allowed.",
@@ -1055,6 +1055,7 @@ static void netplay_relay_error132(int code)
         "Not possible here: not in a room, or already in one." };
     const char *text = code >= 1 && code <= 9 ? why[code] : "The server refused the request.";
     int state = np_load(&N.state), private_password, recoverable;
+    int partner = project_server_endpoint(N.server_text);
     if (state == NETPLAY_FAILED || state == NETPLAY_OFF) return;
     EnterCriticalSection(&g_cs);
     if (code == 7 && N.lobby && N.have_token && state != NETPLAY_CONNECTING) {
@@ -1074,12 +1075,21 @@ static void netplay_relay_error132(int code)
         return;
     }
     private_password = code == 10 && N.lobby && N.have_token &&
-        state != NETPLAY_CONNECTING && !project_server_endpoint(N.server_text) &&
+        state != NETPLAY_CONNECTING && !partner &&
         N.pend_len >= 14 && (N.pend[5] == T_CREATE_PRIVATE || N.pend[5] == T_JOIN_PRIVATE);
     if (code == 10) text = private_password ? "Private room: password missing or incorrect." :
         "Update the app to connect to this relay.";
-    if (code == 11 && project_server_endpoint(N.server_text))
+    if (code == 11 && partner)
         text = "This installation already has an active online session.";
+    if (code == 14 && partner) {
+        static const char unsupported[] = "platform not supported";
+        if (message_len == sizeof unsupported - 1 && !memcmp(message, unsupported, message_len))
+            text = "This relay does not support the Android platform.";
+        else if (state == NETPLAY_CONNECTING)
+            text = "FFNY Online has not enabled Android on this relay yet.";
+        else
+            text = "FFNY Online has not accepted this Android build's capabilities.";
+    }
     recoverable = N.lobby && N.have_token && state != NETPLAY_CONNECTING &&
         (code == 1 || code == 2 || code == 3 || code == 8 || code == 9 || private_password);
     if (recoverable && code == 9 && N.roomv.in_room && N.pend_len &&
@@ -1241,7 +1251,10 @@ static void on_packet(const uint8_t *b, int len)
         if (N.lobby) on_start(b + 6, len - 6);
         break;
     case T_ERROR:
-        if (len >= 7) netplay_relay_error132(b[6]);
+        if (len >= 7) {
+            size_t message_len = len >= 8 && b[7] <= len - 8 ? b[7] : 0;
+            netplay_relay_error132(b[6], message_len ? b + 8 : NULL, message_len);
+        }
         break;
     }
 }
@@ -1494,6 +1507,11 @@ static int start(const char *server, const char *name, int creating, const char 
     netplay_stop();
     if (!server || !*server) { InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("Enter the server address first."); return -1; }
     if (netplay_retry_blocked132(server)) return -1;
+    if (!lobby && project_server_endpoint(server)) {
+        InterlockedExchange(&N.state, NETPLAY_FAILED);
+        set_status("Use the online lobby for FFNY Online on Android.");
+        return -1;
+    }
     snprintf(N.server_text, sizeof(N.server_text), "%s", server);
     snprintf(N.name, sizeof(N.name), "%s", name && *name ? name : "Player");
     /* The verified Discord game name is the account identity for ranked play.
