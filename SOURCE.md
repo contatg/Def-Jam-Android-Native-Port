@@ -23,6 +23,13 @@ The wire helpers target [build 81](https://github.com/sweeax-exe/ffny-online/rel
 
 Android now compiles the deterministic math sources from [build 80](https://github.com/sweeax-exe/ffny-online/tree/v0.13.0-remaster.80/src/detmath) and checks the guest thread's floating-point mode at each simulation step. The upstream vector test produced 55 matching hashes on x86-64 and emulated ARM64 (1,000,000 inputs per set). This tests math functions only. Gameplay checksum parity is pending.
 
+
+### Android progress update (2026-11-13)
+
+- The ARM64 test APK includes experimental rollback with runtime heap detection, a 192 MiB contiguous guest memory window, and 128 MiB reported guest RAM. It includes the Discord sign-in flow and the restored custom touch artwork. Execution is native, with hakuX and ZeroTier removed.
+- The development branch adds Android HELLO and CAPS fixtures, build 81 checksum messages, desync diagnostics, and peak RSS logging. The wire fixture passed locally and 55 deterministic-math result hashes matched the upstream implementation in a host test. The latest APK is the touch-artwork fix on the earlier rollback test build.
+- The client still blocks the official relays. The next candidate needs the remaining build 81 gameplay and netplay work, a verified build number and CAPS from the APK, and lockstep, rollback, and rematch results from two Android devices. The test fixture uses build 81 and CAPS `0x00000000`. The production `latest-android.json` is pending.
+
 Before enabling the partner relay:
 
 - Port the remaining tagged game hooks and match behavior to Android. The Android HELLO and CAPS packets and build 81 checksum messages have local fixtures in `tests/unit/test_ffny_android_wire.py`. The fixture's CAPS value is `0x00000000` for ordinary rooms. Verify the word and build number on the actual APK before sending them to the partner. Keep the Android queue separate and ranked disabled.
