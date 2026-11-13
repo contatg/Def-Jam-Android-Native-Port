@@ -8,6 +8,11 @@ An unofficial Android ARM64 port of **Def Jam: Fight for NY**.
 
 The Android 1.4 source, build scripts and room server are available here. The port's own code uses the [MIT license](LICENSE), with upstream license notices preserved. See the [source and build guide](SOURCE.md).
 
+
+## FFNY Online Android development
+
+The experimental ARM64 build includes rollback, the build 81 guest memory layout (192 MiB contiguous and 128 MiB reported to the game), Discord sign-in, and restored custom touch controls. The development branch includes the relay packet and checksum tests. Official relay access and two-device match validation are pending. [Android development status](https://github.com/contatg/Def-Jam-Android-Native-Port/blob/ffny-online-android/SOURCE.md#android-progress-update-2026-11-13).
+
 ## Your original game is required
 
 The original Xbox disc/ISO and extracted game data are not distributed here.
