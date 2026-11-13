@@ -36,12 +36,15 @@
 #if defined(__ANDROID__)
 #include "android_netplay.h"
 #include "ffny_android_protocol.h"
+#include "guest_window.h"
+#include "netplay_check.h"
 #include "detmath/detmath.h"
 #include "online_delay126.h"
 #include "online_wait128.h"
 #include "platform/android_hitch.h"
 #include "platform/android_sched.h"
 #include <sys/socket.h>
+#include <sys/resource.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
@@ -173,7 +176,7 @@ void netplay_crowd_update(void) { sub_00081170(); }
 #define P_GAMEACK     2     /* guest -> host */
 #define P_LIVEPAD     3     /* u32 sequence, 18 bytes XBOX_GAMEPAD */
 #define P_STEPS       4     /* u32 match, u32 last step, u8 count, count x 32 bytes */
-#define P_HASH        5     /* u32 match, u32 step, u32 hash */
+#define P_HASH        5     /* match, step, hash and optional diagnostics (netplay_check.h) */
 #define P_RTT         6     /* hub: u32 START seed, u16 this PC's ping to the relay in ms */
 #define LOCKSTEP_VERSION 4     /* 3: builds 19-20, rollback on; 4: build 21, rollback off again, reclaim on */
 
@@ -258,7 +261,7 @@ static struct {
     uint32_t in_tag[MAXP][RING];    /* step + 1 (0 = empty) */
     uint32_t in_match[MAXP][RING];
     HANDLE arrived;
-    uint32_t local_hash[16][3], remote_hash[16][3];   /* match, step, hash */
+    NetCheck local_hash[16], remote_hash[16];
     int desync;
     uint32_t desync_step;
     struct { uint32_t which, count; } seeds[32];
@@ -299,7 +302,8 @@ static struct {
     uint8_t used_pred[MAXP][RING];      /* 1: a prediction */
     uint32_t final_step;                /* every step up to this one ran on the real entries */
     uint32_t updates;                   /* game updates since the match's reference copy */
-    uint32_t hash_at[RING], hash_tag[RING], hash_sent;
+    NetCheck hash_at[RING];
+    uint32_t hash_sent;
     int rb_on, rb_ref_due, resim, predicting;
     int rb_fought;                      /* the phase word said "fighting" in this match */
     int peer_rb[MAXP];                  /* each position rolls back (its P_RTT says so) */
@@ -420,7 +424,13 @@ static void send_raw(const uint8_t *b, int len)
 static void send_hello(void)
 {
     uint8_t b[64];
-    int n = header(b, T_HELLO), len = (int)strlen(N.name);
+    int len = (int)strlen(N.name);
+    if (project_server_endpoint(N.server_text)) {
+        size_t n = N.lobby ? ffny_android_lobby_hello(b, N.name, (size_t)len, 0) : 0;
+        if (n) send_raw(b, (int)n);
+        return;
+    }
+    int n = header(b, T_HELLO);
     b[n++] = N.lobby ? 2 : N.creating ? 0 : 1;
     memset(b + n, 0, 6);
     if (!N.lobby && !N.creating) memcpy(b + n, N.room, 6);
@@ -428,21 +438,14 @@ static void send_hello(void)
     memcpy(b + n, N.build, 8); n += 8;
     b[n++] = (uint8_t)len;
     memcpy(b + n, N.name, (size_t)len); n += len;
-    if (project_server_endpoint(N.server_text)) {
-        ffny_android_hello_suffix(b + n, 0);
-        n += 9;
-    }
     send_raw(b, n);
 }
 
 static void netplay_send_caps132(void)
 {
     uint8_t b[18];
-    int n = header(b, T_CAPS132);
-    memcpy(b + n, N.token, 8); n += 8;
-    /* Ordinary rooms only. Do not claim King of the Hill/watch support. */
-    put32(b + n, FFNY_ANDROID_CAPS); n += 4;
-    send_raw(b, n);
+    ffny_android_caps_packet(b, N.token);
+    send_raw(b, sizeof(b));
 }
 
 static void send_partner_device_id(void)
@@ -583,7 +586,7 @@ static void lose_peer(const char *why)
 }
 
 /* The hub match is over for this PC: tell the server and go back to the room. */
-/* The contiguous window's use (64 MiB: textures, vertex data, rollback's audio arena) at a match's
+/* The contiguous window's use (textures, vertex data, rollback's audio arena) at a match's
  * start and end: when it runs dry the game draws with buffers it did not get (white blocks, the
  * announcer word sheet). Reports from build 19 showed it full at a second match's start. */
 extern uint32_t xbox_ContiguousLiveBytes(void);
@@ -592,6 +595,11 @@ static void log_contiguous(const char *when)
 {
     fprintf(stderr, "[MEM] contiguous memory %s: %.1f MB in use, %.1f MB reached\n", when,
             xbox_ContiguousLiveBytes() / 1048576.0, xbox_ContiguousAllocatedBytes() / 1048576.0);
+#if defined(__ANDROID__)
+    struct rusage usage;
+    if (getrusage(RUSAGE_SELF, &usage) == 0)
+        fprintf(stderr, "[MEM] Android peak RSS %s: %ld KiB\n", when, usage.ru_maxrss);
+#endif
 }
 
 static void end_hub_match(const char *why)
@@ -643,29 +651,39 @@ static void check_hashes(void)
     int i, j;
     for (i = 0; i < 16; i++)
         for (j = 0; j < 16; j++) {
-            if (!N.local_hash[i][1] || N.local_hash[i][0] != N.remote_hash[j][0] ||
-                N.local_hash[i][1] != N.remote_hash[j][1])
+            const NetCheck *local = &N.local_hash[i];
+            NetCheck *remote = &N.remote_hash[j];
+            if (!local->step || local->match != remote->match || local->step != remote->step)
                 continue;
-            if (N.local_hash[i][2] != N.remote_hash[j][2]) {
+            if (local->hash != remote->hash) {
                 if (!N.desync) {
                     N.desync = 1;
-                    N.desync_step = N.local_hash[i][1];
+                    N.desync_step = local->step;
                     fprintf(stderr, "[NETPLAY] desync in match %08X at step %u (local %08X, remote %08X)\n",
-                            N.local_hash[i][0], N.local_hash[i][1], N.local_hash[i][2], N.remote_hash[j][2]);
+                            local->match, local->step, local->hash, remote->hash);
+                    if (remote->has_parts) {
+                        char detail[700];
+                        netcheck_parts_text(detail, sizeof(detail), local, remote, N.fighters, N.players);
+                        fprintf(stderr, "[NETPLAY] desync detail: %s\n", detail);
+                        if (netcheck_fields_text(detail, sizeof(detail), local, remote, N.fighters))
+                            fprintf(stderr, "[NETPLAY] desync fields: %s\n", detail);
+                    }
                     toast(8000, "The games went out of sync: this match won't count.");
 #if defined(__ANDROID__)
                     InterlockedExchange(&N.lockstep, 0);
                     InterlockedExchange(&N.stop, 1);
                     InterlockedExchange(&N.state, NETPLAY_FAILED);
                     assign_input(0); SetEvent(N.arrived);
-                    set_status("Crossplay desync: disconnected. This fight is now offline.");
+                    set_status("Online desync: disconnected. This fight is now offline.");
 #endif
                 }
-            } else if (++g_hash_matches % 10 == 0) {
-                fprintf(stderr, "[NETPLAY] in step: %u checksums compared and equal (match %08X, step %u)\n",
-                        g_hash_matches, N.local_hash[i][0], N.local_hash[i][1]);
+            } else {
+                ++g_hash_matches;
+                if (g_hash_matches == 1 || g_hash_matches % 10 == 0)
+                    fprintf(stderr, "[NETPLAY] in step: %u checksums compared and equal (match %08X, step %u)\n",
+                            g_hash_matches, local->match, local->step);
             }
-            N.remote_hash[j][1] = 0;    /* compared */
+            remote->step = 0;    /* compared */
         }
 }
 
@@ -694,6 +712,17 @@ static int agreed_delay(void)
             required,d,d>0?d*1000.0/60:0.0,extended);
     if(d>0&&required>d)fprintf(stderr,"[NETDELAY126] latency exceeds agreed budget; older peers or very high RTT can still stall lockstep\n");
     return d;
+}
+
+/* A hub match only starts rollback if every participant agreed to it. */
+static int match_uses_rollback(void)
+{
+    if (!rollback_wanted()) return 0;
+    if (!N.lobby) return 1;
+    if (!N.delay_fixed) return 0;
+    for (int i = 0; i < N.players; ++i)
+        if (!N.peer_rb[i]) return 0;
+    return 1;
 }
 
 static void on_data(int from, const uint8_t *p, int len)
@@ -752,17 +781,17 @@ static void on_data(int from, const uint8_t *p, int len)
             if (N.delay_fixed && had < 0) send_rtt();   /* it may still be waiting for ours */
         }
         break;
-    case P_HASH:
-        if (len >= 13) {
+    case P_HASH: {
+        NetCheck incoming;
+        if (netcheck_unpack(p, len, &incoming)) {
             EnterCriticalSection(&g_cs);
-            memmove(N.remote_hash[1], N.remote_hash[0], sizeof(N.remote_hash[0]) * 15);
-            N.remote_hash[0][0] = get32(p + 1);
-            N.remote_hash[0][1] = get32(p + 5);
-            N.remote_hash[0][2] = get32(p + 9);
+            memmove(&N.remote_hash[1], &N.remote_hash[0], sizeof(N.remote_hash[0]) * 15);
+            N.remote_hash[0] = incoming;
             check_hashes();
             LeaveCriticalSection(&g_cs);
         }
         break;
+    }
     }
 }
 
@@ -2046,16 +2075,41 @@ int netplay_in_fight(void) { return MEM32(G_MATCH_PHASE) == 1u; }
 
 /* ---- the game's hooks ------------------------------------------------------------ */
 
-static uint32_t fighter_hash(void)
+static uint32_t guest_hash_words(uint32_t address, size_t size)
 {
-    static const uint32_t fields[] = { 0x30, 0x44, 0x48, 0x4C, 0x54, 0x350 };
     uint32_t h = 2166136261u;
-    int slot;
-    unsigned i;
-    for (slot = 0; slot < (N.fighters > N.players ? N.fighters : N.players); slot++)
-        for (i = 0; i < sizeof(fields) / sizeof(fields[0]); i++)
-            h = (h ^ MEM32(ACTORS + (uint32_t)slot * STRIDE + fields[i])) * 16777619u;
+    for (size_t offset = 0; offset < size; offset += sizeof(uint32_t))
+        h = (h ^ MEM32(address + offset)) * 16777619u;
     return h;
+}
+
+static void capture_hash(uint32_t step, uint32_t crowd)
+{
+    NetCheck *check = &N.hash_at[step % RING];
+    int fighters = N.fighters > N.players ? N.fighters : N.players;
+    memset(check, 0, sizeof(*check));
+    check->match = N.match;
+    check->step = step;
+    check->hash = 2166136261u;
+    check->has_parts = check->has_extra = 1;
+    for (int slot = 0; slot < fighters && slot < NETCHECK_SLOTS; ++slot) {
+        uint32_t part = 2166136261u;
+        for (unsigned i = 0; i < NETCHECK_FIELDS; ++i) {
+            uint32_t v = MEM32(ACTORS + (uint32_t)slot * STRIDE + netcheck_field[i]);
+            check->fields[slot][i] = v;
+            part = (part ^ v) * 16777619u;
+            check->hash = (check->hash ^ v) * 16777619u;
+        }
+        check->parts[slot] = part;
+    }
+    check->parts[4] = guest_hash_words(0x003BFC70u, 4u * 0x88u);
+    check->shared = guest_hash_words(0x0039C0E0u, 0x88u);
+    check->time_scale = MEM32(0x00349764u);
+    check->parts[5] = (check->shared ^ check->time_scale) * 16777619u;
+    check->match_gen = guest_hash_words(0x003C1400u, 0x88u);
+    for (unsigned i = 0; i < NETCHECK_GENS; ++i)
+        check->gens[i] = guest_hash_words(netcheck_gen[i], 0x88u);
+    check->crowd = crowd;
 }
 
 /* The checksums of steps up to `upto` (the state each one started from), once they are final. */
@@ -2063,17 +2117,16 @@ static void send_hashes(uint32_t upto)
 {
     uint32_t t;
     for (t = N.hash_sent + 1; t <= upto; t++) {
-        uint8_t p[13];
-        uint32_t h;
-        if (t % HASH_EVERY || N.hash_tag[t % RING] != t + 1) continue;
-        h = N.hash_at[t % RING];
+        uint8_t p[NETCHECK_LEN_FULL];
+        const NetCheck *check = &N.hash_at[t % RING];
+        if (t % HASH_EVERY || check->match != N.match || check->step != t) continue;
         EnterCriticalSection(&g_cs);
-        memmove(N.local_hash[1], N.local_hash[0], sizeof(N.local_hash[0]) * 15);
-        N.local_hash[0][0] = N.match; N.local_hash[0][1] = t; N.local_hash[0][2] = h;
+        memmove(&N.local_hash[1], &N.local_hash[0], sizeof(N.local_hash[0]) * 15);
+        N.local_hash[0] = *check;
         check_hashes();
         LeaveCriticalSection(&g_cs);
-        p[0] = P_HASH; put32(p + 1, N.match); put32(p + 5, t); put32(p + 9, h);
-        send_data(p, 13);
+        int len = netcheck_pack(p, sizeof(p), P_HASH, check);
+        if (len) send_data(p, len);
     }
     if (upto > N.hash_sent) N.hash_sent = upto;
 }
@@ -2132,7 +2185,9 @@ void netplay_on_match_start(void)
     N.final_step = N.hash_sent = N.updates = 0;
     N.rb_on = N.rb_ref_due = N.resim = N.predicting = N.rb_fought = 0;
     memset(N.used_tag, 0, sizeof(N.used_tag));
-    memset(N.hash_tag, 0, sizeof(N.hash_tag));
+    memset(N.hash_at, 0, sizeof(N.hash_at));
+    memset(N.local_hash, 0, sizeof(N.local_hash));
+    g_hash_matches = 0;
     memset(N.snap, 0, sizeof(N.snap));
     LeaveCriticalSection(&g_cs);
     rollback_reset();
@@ -2141,7 +2196,8 @@ void netplay_on_match_start(void)
      * first step, and the others waited for it until they gave up (seen on The Pit, whose load is
      * the longest). */
     fight_input();
-    fprintf(stderr, "[NETPLAY] match %08X starts in lockstep (%d players, delay %d)\n", N.match, N.players, N.delay);
+    fprintf(stderr, "[NETPLAY] match %08X round %u starts (%d players, delay %d)\n",
+            N.match, (unsigned)N.match_count, N.players, N.delay);
     if(N.lobby){
         int required128=0,extended128=0;
         online_delay126(N.peer_rtt,N.peer_rb,N.peer_delay126,N.players,&required128,&extended128);
@@ -2327,6 +2383,21 @@ static void crowd_reset(uint32_t arena)
             with_text ? "the game's restart" : "field by field");
 }
 
+static size_t crowd_record_bytes(uint32_t records, uint32_t count)
+{
+    uint32_t end;
+    if (records >= GUEST_WINDOW_LO && records < GUEST_WINDOW_HI)
+        end = GUEST_WINDOW_HI;
+    else if (records >= 0x1000u && records < 0x04000000u)
+        end = 0x04000000u;
+    else
+        return 0;
+    uint64_t bytes = (uint64_t)count * 0x34u;
+    if (bytes > 0x4000u) bytes = 0x4000u;
+    uint32_t available = end - records;
+    return (size_t)(bytes < available ? bytes : available);
+}
+
 static void netwait126_record(int peer,ULONGLONG ms,uint32_t step)
 {
     static ULONGLONG epoch,total[MAXP],max_wait[MAXP];
@@ -2385,9 +2456,18 @@ void netplay_on_step(void)
         static int crowd_on = -1;   /* RECOMP_ONLINE_CROWD=keep: tests compare without the restart */
         if (crowd_on < 0) crowd_on = !(getenv("RECOMP_ONLINE_CROWD") && !strcmp(getenv("RECOMP_ONLINE_CROWD"), "keep"));
         if (crowd_on) crowd_reset(g_ecx);
-        if (!N.resim && rollback_wanted()){
-            if(rollback_prepare()==0)N.rb_on=N.rb_ref_due=1;
-            else {rollback_abort131("negotiated rollback preparation failed");return;}
+        if (!N.resim) {
+            int use_rollback = match_uses_rollback();
+            fprintf(stderr, "[NETPLAY] match %08X agreed mode=%s\n",
+                    N.match, use_rollback ? "rollback" : "lockstep");
+            if (use_rollback) {
+                if (rollback_prepare() != 0) {
+                    rollback_abort131("negotiated rollback preparation failed");
+                    return;
+                }
+                N.rb_on = N.rb_ref_due = 1;
+                log_contiguous("after rollback preparation");
+            }
         }
     }
     {
@@ -2408,22 +2488,23 @@ void netplay_on_step(void)
         /* tests: the crowd's three parts, every step, to see which parts first and when */
         uint32_t hr = 2166136261u, hg = 2166136261u, hu = 2166136261u, k, recs = MEM32(0x003494E4u);
         uint32_t count = MEM32(0x003494E0u);
-        for (k = 0; recs && k < count * 0x34u && k < 0x4000u; k++) hr = (hr ^ MEM8(recs + k)) * 16777619u;
+        size_t bytes = crowd_record_bytes(recs, count);
+        for (k = 0; k < bytes; k++) hr = (hr ^ MEM8(recs + k)) * 16777619u;
         for (k = 0; k < 0x88u; k++) hg = (hg ^ MEM8(g_ecx + CROWD_MANAGER + 0xE18u + k)) * 16777619u;
         for (k = 0; k < 6u; k++) hu = (hu ^ g_crowd_gen[k]) * 16777619u;
         fprintf(stderr, "[NETPLAY] crowd parts at step %u: records %08X crowd-gen %08X global-gen %08X\n", s, hr, hg, hu);
     }
-    if (s == 1 || s == 2 || s == 60 || s == 300 || s == 900 || s == 1800) {
+    if (s == 1 || s == 2 || s % HASH_EVERY == 0) {
         /* the crowd's state, to compare between the PCs: the records, its generator, the global one */
         uint32_t h = 2166136261u, k, recs = MEM32(0x003494E4u), count = MEM32(0x003494E0u);
-        for (k = 0; recs && k < count * 0x34u && k < 0x4000u; k++) h = (h ^ MEM8(recs + k)) * 16777619u;
+        size_t bytes = crowd_record_bytes(recs, count);
+        for (k = 0; k < bytes; k++) h = (h ^ MEM8(recs + k)) * 16777619u;
         for (k = 0; k < 0x88u; k++) h = (h ^ MEM8(g_ecx + CROWD_MANAGER + 0xE18u + k)) * 16777619u;
         for (k = 0; k < 6u; k++) h = (h ^ g_crowd_gen[k]) * 16777619u;     /* the crowd's copy, not the real one */
-        fprintf(stderr, "[NETPLAY] crowd hash at step %u: %08X (%u records)\n", s, h, count);
+        if (s == 1 || s == 2 || s == 60 || s == 300 || s == 900 || s == 1800)
+            fprintf(stderr, "[NETPLAY] crowd hash at step %u: %08X (%u records)\n", s, h, count);
+        if (s % HASH_EVERY == 0) capture_hash(s, h);
     }
-    k = s % RING;
-    N.hash_at[k] = fighter_hash();      /* the state as this step starts */
-    N.hash_tag[k] = s + 1;
     if (N.resim) return;                /* a re-run: the entries are all known or predicted */
     target = s + (uint32_t)N.delay;
     k = target % RING;

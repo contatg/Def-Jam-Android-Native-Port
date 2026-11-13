@@ -92,6 +92,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <tlhelp32.h>
+#include "guest_window.h"
 
 extern ptrdiff_t g_xbox_mem_offset;
 
@@ -206,7 +207,7 @@ static DWORD64 dr7_for_length(int length)
 static int guest_readable(uint32_t va)
 {
     return (va >= 0x1000u && va < 0x04000000u)
-        || (va >= 0x80000000u && va < 0x84000000u);
+        || (va >= GUEST_WINDOW_LO && va < GUEST_WINDOW_HI);
 }
 
 static void arm_thread(DWORD tid)
