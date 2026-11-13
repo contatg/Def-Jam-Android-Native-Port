@@ -36,7 +36,6 @@ original Xbox game, upstream recompilation work or third-party components.
 
 ## Emulator, frame generation and graphics
 
-- **rfandango and contributors** developed hakuX. The integration and its pinned upstream sources are documented in [hakuX](third_party/hakux/).
 - **The412Banner and contributors** developed Win-FG. The port adapts it and the AMD FidelityFX optical-flow code. [Win-FG MIT license](tools/xboxrecomp/src/d3d/fg34/vendor/LICENSE) · [AMD notice](tools/xboxrecomp/src/d3d/fg34/vendor/NOTICE_FIDELITYFX_OPTICALFLOW.md)
 - **lsfg-vk and lsfg-vk-android contributors** wrote the MIT-licensed Vulkan LSFG integration used by the port. [Upstream and license details](tools/xboxrecomp/src/d3d/lsfg27/UPSTREAM.md)
 - **Rangga Casper and contributors** developed MostWanted-Android, credited for the FSR1/Vulkan presentation code used as a reference. [Bundled notices](android/app/src/main/assets/about/THIRD-PARTY-NOTICES.txt)

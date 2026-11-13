@@ -25,7 +25,10 @@
 #define XBOX_CONTIG_BASE 0x80000000u
 #endif
 #ifndef XBOX_CONTIG_SIZE
-#define XBOX_CONTIG_SIZE (64u * 1024u * 1024u)
+#ifndef XBOX_CONTIG_MB
+#define XBOX_CONTIG_MB 64
+#endif
+#define XBOX_CONTIG_SIZE ((uint32_t)(XBOX_CONTIG_MB) * 1024u * 1024u)
 #endif
 
 /* The runtime maps guest memory at a fixed host offset. */

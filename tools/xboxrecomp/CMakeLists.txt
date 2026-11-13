@@ -22,6 +22,18 @@ add_compile_definitions(
     NOMINMAX
 )
 
+# Guest memory sizes, fixed per build (kernel.h). The contiguous window is the
+# console's 64 MB unless a port asks for more; MmQueryStatistics reports 64 MB
+# of RAM unless a port asks for more. A title that sizes its arena from the free
+# pages and takes it from the window needs both raised together.
+set(XBOXRECOMP_CONTIG_MB 64 CACHE STRING "Size of the contiguous window in MB (64 = the console)")
+set(XBOXRECOMP_RAM_REPORT_MB 64 CACHE STRING "Physical memory MmQueryStatistics reports, in MB (64 = the console)")
+if(XBOXRECOMP_CONTIG_MB LESS 64 OR XBOXRECOMP_CONTIG_MB GREATER 192)
+    message(FATAL_ERROR "XBOXRECOMP_CONTIG_MB must be 64..192 (window + 64 MB of RAM within 256 MB)")
+endif()
+add_compile_definitions(XBOX_CONTIG_MB=${XBOXRECOMP_CONTIG_MB}
+                        XBOX_REPORTED_RAM_MB=${XBOXRECOMP_RAM_REPORT_MB})
+
 # Option to build examples
 
 # ── Runtime Libraries ─────────────────────────────────────────
@@ -61,6 +73,8 @@ add_subdirectory(src/video)
 
 # Convenience target that links all runtime libraries
 add_library(xboxrecomp INTERFACE)
+target_compile_definitions(xboxrecomp INTERFACE XBOX_CONTIG_MB=${XBOXRECOMP_CONTIG_MB}
+                           XBOX_REPORTED_RAM_MB=${XBOXRECOMP_RAM_REPORT_MB})
 target_link_libraries(xboxrecomp INTERFACE
     xbox_kernel
     xbox_d3d8

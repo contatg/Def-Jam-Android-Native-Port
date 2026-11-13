@@ -11,8 +11,6 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
 
-    <queries><package android:name="com.rfandango.haku_x" /></queries>
-
     <application
         android:allowBackup="false"
         android:extractNativeLibs="true"
@@ -23,11 +21,6 @@
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
-        <provider android:name=".XisoShareProvider34" android:authorities="${applicationId}.xiso34" android:exported="false" android:grantUriPermissions="true" />
-        <activity android:name=".HakuXRestart36" android:exported="false" android:screenOrientation="sensorLandscape" />
-        <activity android:name=".HakuXGame36" android:exported="false" android:process=":hakux"
-            android:screenOrientation="sensorLandscape" android:hardwareAccelerated="true"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode" />
         <activity android:name=".FramegenActivity29" android:exported="false" android:screenOrientation="sensorLandscape" />
         <activity android:name=".AboutActivity" android:exported="false"
             android:screenOrientation="sensorLandscape" android:configChanges="orientation|screenSize|keyboardHidden" />

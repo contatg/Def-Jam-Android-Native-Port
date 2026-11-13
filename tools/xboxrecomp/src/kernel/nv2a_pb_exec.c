@@ -706,7 +706,7 @@ static int fetch_attr_from(const VertexAttr *a, uint32_t index, float out[4],
         uint64_t va = (uint64_t)a->offset + (uint64_t)index * a->stride;
         if (!a->offset
          || !((va >= 0x1000u && va + 16 <= 0x04000000u)
-           || (va >= 0x80000000u && va + 16 <= 0x84000000u))) {
+           || (va >= 0x80000000u && va + 16 <= (XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)))) {
             static int warned;
             if (report && a->offset && !warned) {
                 warned = 1;
@@ -852,7 +852,7 @@ static PackEntry138 *android_pack_probe138(const NvAndroidGatherJob *j,uint32_t 
             if(last>length||bytes>length-last){s_pack138.bypassed++;return NULL;}
             base=(const uint8_t *)j->inline_buf;
         }else{
-            if(!v->offset||!((first>=0x1000u&&last+16<=0x04000000u)||(first>=0x80000000u&&last+16<=0x84000000u))){s_pack138.bypassed++;return NULL;}
+            if(!v->offset||!((first>=0x1000u&&last+16<=0x04000000u)||(first>=0x80000000u&&last+16<=(XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)))){s_pack138.bypassed++;return NULL;}
             base=j->mem;
         }
         uint64_t length=last-first+bytes;if(length>PACK138_INPUT){s_pack138.bypassed++;return NULL;}
@@ -920,7 +920,7 @@ static void android_gather_range(void *arg, uint32_t begin, uint32_t end)
                 float_base[k] = (const uint8_t *)job->inline_buf + a->offset;
             } else {
                 if (!a->offset || !((first >= 0x1000u && last + 16 <= 0x04000000u)
-                        || (first >= 0x80000000u && last + 16 <= 0x84000000u))) continue;
+                        || (first >= 0x80000000u && last + 16 <= (XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)))) continue;
                 float_base[k] = (const uint8_t *)((uintptr_t)job->mem + a->offset);
             }
             components[k] = (uint8_t)n;
@@ -4970,7 +4970,7 @@ static void peek_addresses(void)
          * second one, and skipping it silently made this print nothing
          * at all for an address that was perfectly readable. */
         if (!((va >= 0x1000u && va < 0x04000000u)
-           || (va >= 0x80000000u && va < 0x84000000u)))
+           || (va >= XBOX_CONTIG_BASE && va < XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)))
             continue;
         v = *(const uint32_t *)(mem + va);
         memcpy(&f, &v, 4);
@@ -5009,7 +5009,7 @@ static void peek_chain(void)
              * allocates contiguously live at 0x8xxxxxxx, and a chain that
              * stops at the first of those stops at most of them. */
             if (!((cur >= 0x1000u && cur + 4 < 0x04000000u)
-               || (cur >= 0x80000000u && cur + 4 < 0x84000000u))) {
+               || (cur >= XBOX_CONTIG_BASE && cur + 4 < XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE))) {
                 fprintf(stderr, "  [CHAIN] step %d: 0x%08X is not a guest"
                                 " pointer -- chain ends\n", step, cur);
                 return;
@@ -5021,7 +5021,7 @@ static void peek_chain(void)
         step++;
     }
     if ((cur >= 0x1000u && cur + 4 < 0x04000000u)
-     || (cur >= 0x80000000u && cur + 4 < 0x84000000u))
+     || (cur >= XBOX_CONTIG_BASE && cur + 4 < XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE))
         fprintf(stderr, "  [CHAIN] final value at 0x%08X = 0x%08X\n",
                 cur, *(const uint32_t *)(mem + cur));
     fflush(stderr);

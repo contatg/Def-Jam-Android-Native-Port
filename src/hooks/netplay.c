@@ -1505,7 +1505,7 @@ static int start(const char *server, const char *name, int creating, const char 
     if (!server || !*server) { InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("Enter the server address first."); return -1; }
     if (project_server_endpoint(server)) {
         InterlockedExchange(&N.state, NETPLAY_FAILED);
-        set_status("FFNY Online requires an Android build based on the partner's game tag.");
+        set_status(NETPLAY_PARTNER_BUILD_REQUIRED);
         return -1;
     }
     if (netplay_retry_blocked132(server)) return -1;
@@ -2627,7 +2627,7 @@ static void rollback_crash_state(void)
         uint32_t o = MEM32(0x003A52A8u);
         int k;
         for (k = 0; k < 48 && o; k++) {
-            int sane = o >= 0x80003000u && o < 0x82A0D000u;
+            int sane = rollback_in_heap(o);
             fprintf(stderr, "[ROLLBACK]   loaded object %08X (%s)%s\n", o, rollback_page_state(o), sane ? "" : " NOT A HEAP ADDRESS");
             if (!sane) break;
             {   /* dlsym's pointers: +8 string table, +0x10 symbol count, +0x14 symbol table, +0x420 chain, +0x424 flags */

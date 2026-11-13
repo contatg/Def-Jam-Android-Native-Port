@@ -89,6 +89,10 @@ extern uint32_t xbox_PhysMapGeneration(void);
 
 #define APU_PHYS_CACHE 256
 #define APU_CONTIG_BASE 0x80000000u
+#ifndef XBOX_CONTIG_MB
+#define XBOX_CONTIG_MB 64
+#endif
+#define APU_WINDOW_BYTES ((uint32_t)XBOX_CONTIG_MB << 20)
 
 uint8_t *mcpx_apu_phys(uint64_t addr)
 {
@@ -96,7 +100,7 @@ uint8_t *mcpx_apu_phys(uint64_t addr)
      * entry or none: generation (24 bits, offset by one so a zeroed entry
      * never matches), physical page (20), guest page (20). */
     static volatile uint64_t cache[APU_PHYS_CACHE];
-    uint32_t pa = (uint32_t)addr & 0x03FFFFFFu;
+    uint32_t pa = (uint32_t)addr & (APU_WINDOW_BYTES > (64u << 20) ? 0x0FFFFFFFu : 0x03FFFFFFu);
     uint32_t pn = pa >> 12;
     uint64_t tag = ((uint64_t)((xbox_PhysMapGeneration() + 1) & 0xFFFFFFu) << 40)
                  | ((uint64_t)pn << 20);
@@ -113,7 +117,7 @@ uint8_t *mcpx_apu_phys(uint64_t addr)
     } else {
         uint32_t va = xbox_PhysicalToVirtual(pa);
         if (!va)
-            va = APU_CONTIG_BASE + pa;
+            va = APU_CONTIG_BASE + (pa < APU_WINDOW_BYTES ? pa : pa & 0x03FFFFFFu);
         vn = va >> 12;
 #ifdef _MSC_VER
         _InterlockedExchange64((volatile __int64 *)&cache[pn % APU_PHYS_CACHE],

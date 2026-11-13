@@ -19,7 +19,8 @@ android {
         ndk { abiFilters "arm64-v8a" }
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_STL=c++_shared", "-DDEFJAM_BUILD_GAME=ON"
+                arguments "-DANDROID_STL=c++_shared", "-DDEFJAM_BUILD_GAME=ON",
+                          "-DXBOXRECOMP_CONTIG_MB=192", "-DXBOXRECOMP_RAM_REPORT_MB=128"
                 cFlags "-O2"
                 cppFlags "-O2"
                 targets "main", "SDL3-shared", "main_hook", "hook_impl", "defjam_fg34", "defjam_lsfg27"

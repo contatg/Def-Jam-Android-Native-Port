@@ -66,6 +66,9 @@ int rollback_checkpoint131(void);
 int rollback_restore_checkpoint131(void);
 void rollback_drop_checkpoint131(void);
 int rollback_capable131(void);
+#if defined(__ANDROID__)
+int rollback_in_heap(uint32_t va);
+#endif
 int rollback_load(int slot);
 void rollback_reset(void);
 /* For the log and tests: KB a save copies, pages known to change, pages left alone. */

@@ -7322,7 +7322,7 @@ static HANDLE ke_guest_event(uint32_t guest_va, int *type)
         return NULL;
     if (guest_va < 0x10000u || (guest_va & 3u))
         return NULL;
-    if (guest_va >= 0x04000000u && (guest_va < 0x80000000u || guest_va >= 0x84000000u))
+    if (guest_va >= 0x04000000u && (guest_va < XBOX_CONTIG_BASE || guest_va >= XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE))
         return NULL;                               /* RAM or the contiguous window */
     hdr = BRIDGE_MEM32(guest_va);
     if (((hdr & 0xFFu) != 0 && (hdr & 0xFFu) != 1) || ((hdr >> 16) & 0xFFu) != 4)

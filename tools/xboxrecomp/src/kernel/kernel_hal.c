@@ -1304,6 +1304,49 @@ static void io_port_write(uint16_t port, uint32_t value, int width)
                         "write #%u)\n", width * 8, port, value, n);
 }
 
+/* Port I/O entry points emitted by the build 81 lifter. */
+uint32_t xbox_PortIn(uint32_t port, int width)
+{
+    return io_port_read((uint16_t)port, width);
+}
+void xbox_PortOut(uint32_t port, uint32_t value, int width)
+{
+    io_port_write((uint16_t)port, value, width);
+}
+
+/* Guest CPUID from the build 81 toolkit. */
+void xbox_Cpuid(uint32_t leaf, uint32_t subleaf, uint32_t out[4])
+{
+    static int no_simd = -1;
+
+    if (no_simd < 0) {
+        const char *e = getenv("RECOMP_CPUID_NO_SIMD");
+        no_simd = e && *e && *e != '0';
+    }
+    (void)subleaf;
+    out[0] = out[1] = out[2] = out[3] = 0;
+    if (leaf > 2)
+        leaf = 2;
+    switch (leaf) {
+    case 0:
+        out[0] = 2;
+        out[1] = 0x756E6547u;   /* "Genu" */
+        out[3] = 0x49656E69u;   /* "ineI" */
+        out[2] = 0x6C65746Eu;   /* "ntel" */
+        break;
+    case 1:
+        out[0] = 0x00000683u;
+        out[3] = 0x0383F9FFu;
+        if (no_simd)
+            out[3] &= ~0x03800000u;     /* MMX, FXSR, SSE */
+        break;
+    default:
+        out[0] = 0x03020101u;
+        out[3] = 0x0C040800u;   /* L1 D, DTLB 4M, L1 I, no L2 */
+        break;
+    }
+}
+
 uint8_t  xbox_IoRead8 (uint16_t port) { return (uint8_t) io_port_read(port, 1); }
 uint16_t xbox_IoRead16(uint16_t port) { return (uint16_t)io_port_read(port, 2); }
 uint32_t xbox_IoRead32(uint16_t port) { return           io_port_read(port, 4); }

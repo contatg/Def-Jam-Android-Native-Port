@@ -2,6 +2,7 @@
  * This changes the title clock,not just present. Gameplay speed is UNVALIDATED. */
 #if defined(__ANDROID__)
 #include "recomp/gen/recomp_types.h"
+#include "guest_window.h"
 #include "recomp_settings.h"
 #include "platform/android_sched.h"
 #include "netplay.h"
@@ -13,7 +14,7 @@ static pthread_mutex_t clock_lock140=PTHREAD_MUTEX_INITIALIZER;
 static _Atomic int enabled140,active140;
 static uint32_t owner140;
 static uint64_t original140,written140;
-static int readable140(uint32_t p,uint32_t n){uint64_t end=(uint64_t)p+n;return (p>=0x1000u&&end<=0x04000000u)||(p>=0x80000000u&&end<=0x84000000u);}
+static int readable140(uint32_t p,uint32_t n){uint64_t end=(uint64_t)p+n;return (p>=0x1000u&&end<=0x04000000u)||(p>=GUEST_WINDOW_LO&&end<=GUEST_WINDOW_HI);}
 static uint64_t load64140(uint32_t p){return (uint64_t)MEM32(p)|((uint64_t)MEM32(p+4)<<32);}
 static void store64140(uint32_t p,uint64_t n){MEM32(p)=(uint32_t)n;MEM32(p+4)=(uint32_t)(n>>32);}
 void android_native120_configure140(void){

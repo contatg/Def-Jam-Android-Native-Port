@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#define NETPLAY_PARTNER_BUILD_REQUIRED "FFNY Online requires an Android build based on the partner's game tag."
+
 #ifdef __cplusplus
 extern "C" {
 #endif

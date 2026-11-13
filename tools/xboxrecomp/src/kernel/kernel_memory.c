@@ -158,7 +158,10 @@ NTSTATUS __stdcall xbox_MmQueryStatistics(PXBOX_MM_STATISTICS MemoryStatistics)
      * allocators have handed out. The runtime's main-thread stack reservation is
      * its own artefact and is not counted. */
     {
-        enum { PAGE = 4096, TOTAL = 64 * 1024 * 1024, KERNEL = 2 * 1024 * 1024 };
+        /* TOTAL: the console's 64 MB unless the port reports more
+         * (XBOX_REPORTED_RAM_MB, kernel.h); the title's arena grows with it. */
+        enum { PAGE = 4096, KERNEL = 2 * 1024 * 1024 };
+        const uint64_t TOTAL = (uint64_t)XBOX_REPORTED_RAM_MB * 1024u * 1024u;
         static uint32_t image_size;
         static int logged;
         const uint8_t *mem = (const uint8_t *)xbox_GetMemoryOffset();
@@ -171,7 +174,7 @@ NTSTATUS __stdcall xbox_MmQueryStatistics(PXBOX_MM_STATISTICS MemoryStatistics)
         }
         used = (uint64_t)KERNEL + image_size
              + xbox_HeapLiveBytes() + xbox_ContiguousLiveBytes();
-        MemoryStatistics->TotalPhysicalPages = TOTAL / PAGE;               /* 16384 */
+        MemoryStatistics->TotalPhysicalPages = (ULONG)(TOTAL / PAGE);      /* 16384 at 64 MB */
         MemoryStatistics->AvailablePages =
             used >= TOTAL ? 0 : (ULONG)((TOTAL - used) / PAGE);
         if (logged++ < 4)
@@ -303,6 +306,8 @@ uint32_t xbox_PhysicalToVirtual(uint32_t pa)
     return 0;
 }
 
+extern uint32_t xbox_PhysRamName(uint32_t va);
+
 ULONG_PTR __stdcall xbox_MmGetPhysicalAddress(PVOID BaseAddress)
 {
     /*
@@ -321,7 +326,7 @@ ULONG_PTR __stdcall xbox_MmGetPhysicalAddress(PVOID BaseAddress)
     uint32_t va = (uint32_t)(uintptr_t)BaseAddress;
     uint32_t pa = (va >= XBOX_CONTIG_BASE &&
                    (uint64_t)va < (uint64_t)XBOX_CONTIG_BASE + XBOX_CONTIG_SIZE)
-                ? va - XBOX_CONTIG_BASE : va;
+                ? va - XBOX_CONTIG_BASE : xbox_PhysRamName(va);
     phys_map_record(va, pa);
     return (ULONG_PTR)pa;
 }

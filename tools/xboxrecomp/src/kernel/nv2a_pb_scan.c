@@ -31,7 +31,10 @@
 #ifndef XBOX_CONTIG_BASE
 #define XBOX_CONTIG_BASE 0x80000000u   /* the contiguous window; kernel.h */
 #endif
-#define XBOX_CONTIG_WINDOW 0x04000000u  /* 64 MB of it */
+#ifndef XBOX_CONTIG_MB
+#define XBOX_CONTIG_MB 64
+#endif
+#define XBOX_CONTIG_WINDOW ((uint32_t)(XBOX_CONTIG_MB) << 20)  /* kernel.h's XBOX_CONTIG_SIZE */
 
 extern ptrdiff_t xbox_GetMemoryOffset(void);
 

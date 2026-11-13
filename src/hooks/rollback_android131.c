@@ -8,8 +8,8 @@
  *    thread's blocks, the music refiller) and the pages the sound engine, the loader and the
  *    frame producer write. The small-block allocator's free lists (0x3A4B60..) are in it: a load
  *    that restores the heap without them crashes in the next allocation.
- *  - the heap block 0x80003000..0x82A0D000, page by page, less the sound engine's memory (the
- *    pages the audio subsystem's start-up writes, from AudioManagedRAM on), the frame-record
+ *  - the game's largest live allocation in the contiguous window, page by page, less the
+ *    sound engine's memory (the pages its start-up writes, from AudioManagedRAM on), the frame-record
  *    queue the 60 Hz producer fills, and the pages the other threads write while the game
  *    thread is held at the first step. Only 2-3 MB of the 42 MB change in a fight.
  * Which pages change is tracked exactly: after the reference copy every heap page kept is made
@@ -24,6 +24,7 @@
 
 #if defined(__ANDROID__)
 #include "host.h"
+#include "guest_window.h"
 #if defined(__ANDROID__)
 #define DEFJAM_ROLLBACK131_PC_CORE 1
 #include "android_rollback131.h"
@@ -41,9 +42,11 @@ _Static_assert(ATOMIC_CHAR_LOCK_FREE==2 && ATOMIC_INT_LOCK_FREE==2,"Rollback sig
 #define XBOX_PTR(addr) ((void *)((uintptr_t)(uint32_t)(addr)+g_xbox_mem_offset))
 
 #define PAGE        4096u
-#define HEAP_LO     0x80003000u
-#define HEAP_HI     0x82A0D000u
+static uint32_t s_heap_lo, s_heap_hi;
+#define HEAP_LO     s_heap_lo
+#define HEAP_HI     s_heap_hi
 #define HEAP_PAGES  ((HEAP_HI - HEAP_LO) / PAGE)
+#define HEAP_PAGES_MAX (GUEST_WINDOW_BYTES / PAGE)
 #define AUDIO_RAM   0x0033E9E4u     /* AudioManagedRAM, the sound engine's first block */
 #define FRAME_QUEUE 0x003A017Cu     /* the frame-record queue object (registry 0x27) */
 #define QUEUE_BYTES 0x1AA0u
@@ -106,12 +109,12 @@ typedef struct {
     LONG at;                    /* s_saves when it was taken: frees held after it are undone by its load */
 } Slot;
 
-static _Atomic uint8_t s_skip[HEAP_PAGES];      /* 1: left alone */
-static _Atomic uint8_t s_known[HEAP_PAGES];     /* 1: in s_change */
-static uint32_t s_change[HEAP_PAGES];   /* heap pages known to change, in the order found */
+static _Atomic uint8_t s_skip[HEAP_PAGES_MAX];   /* 1: left alone */
+static _Atomic uint8_t s_known[HEAP_PAGES_MAX];  /* 1: in s_change */
+static uint32_t s_change[HEAP_PAGES_MAX];       /* heap pages known to change, in the order found */
 static _Atomic unsigned s_nchange;
 static _Atomic unsigned s_reserved131;
-static _Atomic uint8_t s_published131[HEAP_PAGES];
+static _Atomic uint8_t s_published131[HEAP_PAGES_MAX];
 static unsigned s_cursor;
 static uint8_t *s_ref;                  /* the heap at the reference point */
 static Range s_dseg[MAX_DSEG];
@@ -120,15 +123,14 @@ static size_t s_dbytes;
 static Slot s_slot[ROLLBACK_SLOTS+1];
 static _Atomic int s_ready;
 static _Atomic uint32_t s_audio_lo;
-static uint32_t s_audio_hi;
 static uint64_t *s_boot_hash;
-static uint8_t s_audio_page[HEAP_PAGES];    /* 1: the audio subsystem's (left alone) */
+static uint8_t s_audio_page[HEAP_PAGES_MAX];    /* 1: the audio subsystem's (left alone) */
 /* write tracking */
-static _Atomic uint8_t s_guard[HEAP_PAGES];
-static _Atomic uint8_t s_ever_guarded131[HEAP_PAGES];     /* 1: read-only, not written since the reference */
+static _Atomic uint8_t s_guard[HEAP_PAGES_MAX];
+static _Atomic uint8_t s_ever_guarded131[HEAP_PAGES_MAX]; /* 1: read-only, not written since the reference */
 /* Diagnostics: the saved pages are read-only for the length of a mixer tick, so the first write to each
  * names its thread and address (RECOMP_ROLLBACK_WRITERS=1, with the allocation log on). */
-static _Atomic uint8_t s_mixguard[HEAP_PAGES];
+static _Atomic uint8_t s_mixguard[HEAP_PAGES_MAX];
 static volatile LONG s_writers_on = -1;
 static DWORD s_mixer_tid;
 static void writer_seen(uint32_t addr, DWORD tid);
@@ -190,6 +192,40 @@ int rollback_enabled(void)
     return on;
 }
 
+/* FFNY Online build 81 finds the title's heap before allocating the sound arena. */
+extern uint32_t xbox_ContiguousBlockSize(uint32_t va);
+static int find_heap(void)
+{
+    uint32_t best = 0, best_size = 0;
+    for (uint32_t va = GUEST_WINDOW_LO + PAGE; va < GUEST_WINDOW_HI;) {
+        uint32_t size = xbox_ContiguousBlockSize(va);
+        if (!size) {
+            va += PAGE;
+            continue;
+        }
+        if ((size & (PAGE - 1u)) || size > GUEST_WINDOW_HI - va)
+            return 0;
+        if (size > best_size) {
+            best = va;
+            best_size = size;
+        }
+        va += size;
+    }
+    if (best_size < 16u * 1024u * 1024u)
+        return 0;
+    s_heap_lo = best;
+    s_heap_hi = best + best_size;
+    android_rollback131_watch_heap(s_heap_lo, s_heap_hi);
+    fprintf(stderr, "[ROLLBACK] the game's heap: %08X..%08X (%u KB)\n",
+            s_heap_lo, s_heap_hi, best_size / 1024);
+    return 1;
+}
+
+int rollback_in_heap(uint32_t va)
+{
+    return va >= HEAP_LO && va < HEAP_HI;
+}
+
 static uint64_t page_hash(uint32_t addr)
 {
     const uint64_t *w = (const uint64_t *)XBOX_PTR(addr);
@@ -203,7 +239,10 @@ void rollback_audio_init_begin(void)
 {
     unsigned p;
     if (s_audio_state) return;
-    if (!rollback_enabled()) { s_audio_state = 2; return; }
+    if (!rollback_enabled() || !android_rollback131_basic_available() || !find_heap()) {
+        s_audio_state = 2;
+        return;
+    }
     s_boot_hash = (uint64_t *)malloc(HEAP_PAGES * sizeof(uint64_t));
     if (!s_boot_hash) { s_audio_state = 2; return; }
     for (p = 0; p < HEAP_PAGES; p++) s_boot_hash[p] = page_hash(HEAP_LO + p * PAGE);
@@ -543,7 +582,7 @@ static int watched_loaded(void)
 {
     uint32_t o = MEM32(0x003A52A8u);
     int k;
-    for (k = 0; k < 4096 && o >= 0x80003000u && o < 0x82A0D000u; k++, o = MEM32(o + 4u))
+    for (k = 0; k < 4096 && rollback_in_heap(o); k++, o = MEM32(o + 4u))
         if (o == s_wobj) return 1;
     return 0;
 }
@@ -757,7 +796,7 @@ void rollback_note_dynamic_load(uint32_t caller, uint32_t handle)
     if (check_on() && s_tracking && handle >= 0x10000u) {
         uint32_t obj = MEM32(handle);
         rollback_check_tables("before the next load");
-        if (obj >= 0x80003000u && obj < 0x82A0D000u) {
+        if (rollback_in_heap(obj)) {
             s_wobj = obj;
             s_wcount = MEM32(obj + 0x10u);
             s_wchain = MEM32(obj + 0x420u);

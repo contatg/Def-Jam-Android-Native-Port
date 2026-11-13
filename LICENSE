@@ -1,5 +1,5 @@
 Port code follows the MIT license below except where a file or its upstream notice
-identifies another license. The build-78 FFNY Online transport in
+identifies another license. The FFNY Online transport in
 src/hooks/ffny_android_protocol.h is GPL-3.0-or-later, copyright (c) 2026
 sweeax-exe (FFNY Online). The full text is in licenses/FFNY-Online-GPL-3.0.txt.
 The combined native client that links this transport is distributed under
@@ -32,5 +32,5 @@ SOFTWARE.
 The project and Android port contributions are licensed under MIT. Separate
 third-party works retain the licenses identified in their source files and
 CREDITS.md. These include FFNY Online (MIT), xboxrecomp (MIT with LGPL-2.1+
-xemu components) and hakuX (GPL-3.0-or-later). This license grants no rights
+xemu components). This license grants no rights
 to the original Def Jam: Fight for NY game, artwork or other game assets.

@@ -34,8 +34,12 @@
 #include "recomp/gen/recomp_types.h"
 #include "hooks/save_compat.h"
 #include "hooks/test_observations.h"
+#include "hooks/guest_window.h"
 #if defined(__ANDROID__)
 #include "hooks/rollback.h"
+
+void sub_0003C6E0_enter(void) { rollback_audio_init_begin(); }
+void sub_00012CC0_enter(void) { rollback_audio_init_end(); }
 #endif
 #include "hooks/recorder.h"
 #include "hooks/fe_inject.h"
@@ -901,7 +905,8 @@ void recomp_icall_not_code_log(uint32_t va)
                 }
             }
         }
-        if (g_ecx >= 0x1000u && g_ecx < 0x84000000u) {
+        if ((g_ecx >= 0x1000u && g_ecx <= 0x04000000u - sizeof(uint32_t)) ||
+            (g_ecx >= GUEST_WINDOW_LO && g_ecx <= GUEST_WINDOW_HI - sizeof(uint32_t))) {
             uint32_t vt = *(volatile uint32_t *)((uintptr_t)g_ecx
                                                + (uintptr_t)g_xbox_mem_offset);
             fprintf(stderr, "  this 0x%08X vtable 0x%08X\n", g_ecx, vt);

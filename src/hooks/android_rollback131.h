@@ -4,6 +4,7 @@
 #include "host.h"
 #include <stdint.h>
 void android_rollback131_configure(int mode);
+void android_rollback131_watch_heap(uint32_t lo, uint32_t hi);
 int android_rollback131_online(void);
 int android_rollback131_available(void);
 int android_rollback131_basic_available(void);

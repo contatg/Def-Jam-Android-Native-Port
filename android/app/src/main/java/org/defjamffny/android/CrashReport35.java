@@ -51,7 +51,7 @@ final class CrashReport35 {
                 java.util.List<android.app.ApplicationExitInfo> entries=m.getHistoricalProcessExitReasons(c.getPackageName(),0,20);
                 android.content.SharedPreferences prefs=c.getSharedPreferences("diagnostic35",Context.MODE_PRIVATE);long last=prefs.getLong("last_exit",0),latest=last;boolean saved=false;
                 for(android.app.ApplicationExitInfo e:entries){String name=e.getProcessName();long stamp=e.getTimestamp();
-                    if(name==null||(!name.equals(c.getPackageName()+":game")&&!name.equals(c.getPackageName()+":hakux"))||stamp<=last||!abnormal(e.getReason()))continue;
+                    if(name==null||!name.equals(c.getPackageName()+":game")||stamp<=last||!abnormal(e.getReason()))continue;
                     File folder=dir(c),report=new File(folder,"game-exit-"+stamp+".txt"),trace=new File(folder,"game-exit-"+stamp+".trace");
                     try(FileOutputStream stream=new FileOutputStream(report);PrintWriter p=new PrintWriter(new OutputStreamWriter(stream,StandardCharsets.UTF_8))){
                         p.println("Def Jam Android — previous game-process exit");p.println("Timestamp (ms): "+stamp);p.println("Process: "+name);p.println("Device: "+Build.MANUFACTURER+" "+Build.MODEL+" / API "+Build.VERSION.SDK_INT);

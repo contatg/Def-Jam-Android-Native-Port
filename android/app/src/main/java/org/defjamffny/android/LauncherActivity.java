@@ -64,8 +64,6 @@ public final class LauncherActivity extends Activity {
     private ChoicePill scale;
     private ChoicePill aspect;
     private ChoicePill driver;
-    private ChoicePill execution34;
-    private Button emulatorOptions36;
     private TogglePill vsync;
     private TogglePill smooth;
     private TogglePill postEffects;
@@ -403,11 +401,6 @@ public final class LauncherActivity extends Activity {
         pp.topMargin = dp(8);
         launchActions.addView(play, pp);
         play.setOnClickListener(v -> play());
-        emulatorOptions36=button(lsfgText27("Emulator options","Opções do emulador","Opciones del emulador"),false);
-        LinearLayout.LayoutParams emulatorParams=new LinearLayout.LayoutParams(-1,dp(42));emulatorParams.topMargin=dp(6);
-        launchActions.addView(emulatorOptions36,emulatorParams);
-        emulatorOptions36.setVisibility(savedEmulatorMode(p)?View.VISIBLE:View.GONE);
-        emulatorOptions36.setOnClickListener(v->HakuXOptions36.show(this));
         Button importIso = button("Extract Xbox ISO", false);
         LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(-1, dp(48)); ip.topMargin = dp(8);
         launchActions.addView(importIso, ip);
@@ -425,18 +418,13 @@ public final class LauncherActivity extends Activity {
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
         right.addView(text("READY TO FIGHT", 25, Color.WHITE, true));
-        right.addView(text(lsfgText27("Choose how to run the game and configure frame generation.","Escolha como executar o jogo e configure a geração de quadros.","Elige cómo ejecutar el juego y configurar la generación de fotogramas."),11,MUTED,false));
+        right.addView(text(lsfgText27("Configure frame generation for the native game.","Configure a geração de quadros do jogo nativo.","Configura la generación de fotogramas del juego nativo."),11,MUTED,false));
 
         language=spinner("English","Português (Brasil)","Español");
         language.setSelection(UiText.languageIndex());
         LinearLayout general = card("Preferences", "Graphics: original game Options > Graphics.");
         general.addView(row("Language", language));
         addCard(right, general);
-        LinearLayout modes34=card(lsfgText27("Execution mode","Modo de execução","Modo de ejecución"),lsfgText27("Choose the native port or the built-in hakuX emulator.","Escolha o port nativo ou o emulador hakuX integrado.","Elige el port nativo o el emulador hakuX integrado."));
-        execution34=spinner(lsfgText27("Native Vulkan","Nativo Vulkan","Nativo Vulkan"),lsfgText27("hakuX · emulator","hakuX · emulador","hakuX · emulador"));
-        execution34.setSelection(savedEmulatorMode(p)?1:0);
-        modes34.addView(row(lsfgText27("Mode","Modo","Modo"),execution34));
-        addCard(right,modes34);
         addFramegenCard29(right);
         LinearLayout languages37=card(lsfgText27("Story subtitles and mods","Legendas da História e mods","Subtítulos de Historia y mods"),lsfgText27("Choose subtitles and translator-made language packs.","Escolha as legendas e pacotes de idioma de tradutores.","Elige subtítulos y paquetes de idioma de traductores."));
         Button manage37=button(lsfgText27("Manage subtitles and mods","Gerenciar legendas e mods","Gestionar subtítulos y mods"),false);
@@ -585,19 +573,7 @@ public final class LauncherActivity extends Activity {
         Toast.makeText(this,lsfgText27("Could not apply framegen: ","Não foi possível aplicar a geração de quadros: ","No se pudo aplicar la generación: ")+detail,Toast.LENGTH_LONG).show();
     }
 
-    private static boolean savedEmulatorMode(SharedPreferences prefs) {
-        // Keep persisted IDs: 2 is hakuX; the old OpenGL ID 1 falls back to Vulkan.
-        return prefs.getInt("execution34",0)==2;
-    }
-    private boolean emulatorSelected() {
-        return execution34!=null&&execution34.getSelectedItemPosition()==1;
-    }
     private void bindPersistence() {
-        execution34.setOnSelectionChanged(()->{
-            boolean emulated=emulatorSelected();
-            prefs().edit().putInt("execution34",emulated?2:0).apply();
-            emulatorOptions36.setVisibility(emulated?View.VISIBLE:View.GONE);
-        });
         driver.setOnSelectionChanged(this::saveUiPreferences);
         language.setOnSelectionChanged(() -> {
             saveUiPreferences();UiText.setLanguage(UiText.languageCode(language.getSelectedItemPosition()));showLauncher();
@@ -612,15 +588,6 @@ public final class LauncherActivity extends Activity {
 
     private void play() { play(false); }
     private void play(boolean online) {
-        boolean emulated=!online&&emulatorSelected();
-        if(!emulated&&HakuxLauncher34.running(this)){
-            Toast.makeText(this,lsfgText27("Close the emulated game first.","Feche a emulação aberta primeiro.","Cierra primero el juego emulado."),Toast.LENGTH_LONG).show();return;
-        }
-        if(emulated){
-            if(gamePid27()!=0){Toast.makeText(this,lsfgText27("Close the native game before opening hakuX.","Feche o jogo nativo antes de abrir o hakuX.","Cierra el juego nativo antes de abrir hakuX."),Toast.LENGTH_LONG).show();return;}
-            if(!hasStorage()){askForStorage();return;}
-            HakuxLauncher34.open(this);return;
-        }
         if (!hasStorage()) {
             askForStorage();
             return;

@@ -396,7 +396,28 @@ typedef VOID (__stdcall *PXBOX_SYSTEM_ROUTINE)(PVOID StartContext);
  * MmClaimGpuInstanceMemory reports GPU instance memory at its top. Shared so
  * the layout and the bridges cannot disagree about where it is. */
 #define XBOX_CONTIG_BASE 0x80000000u
-#define XBOX_CONTIG_SIZE (64u * 1024u * 1024u)
+/* Its size. 64 MB is the console's. A port may build a larger window
+ * (XBOXRECOMP_CONTIG_MB in CMake, which defines XBOX_CONTIG_MB for the runtime
+ * and for whatever links it): the window is separate storage from guest RAM,
+ * so a title whose own arena and whose textures both come from contiguous
+ * memory gets the room without anything else moving. Physical numbers then run
+ * to the window's size, and heap pages are named above it
+ * (xbox_PhysRamAlias), so window + RAM must stay within the 256 MB a title's
+ * D3D keeps of a physical address (VA & 0x0FFFFFFF): at most 192 MB with 64 MB
+ * of RAM. A whole number of megabytes; fixed per build. */
+#ifndef XBOX_CONTIG_MB
+#define XBOX_CONTIG_MB 64
+#endif
+#define XBOX_CONTIG_SIZE ((uint32_t)(XBOX_CONTIG_MB) * 1024u * 1024u)
+
+/* The physical memory MmQueryStatistics reports (TotalPhysicalPages, and the
+ * pages free out of it). 64 MB is the console's; a title that sizes its own
+ * arena from the free pages gets a larger one when a port reports more
+ * (XBOXRECOMP_RAM_REPORT_MB). It must fit what the title then allocates from
+ * the window: keep it below XBOX_CONTIG_MB with room for the title's D3D. */
+#ifndef XBOX_REPORTED_RAM_MB
+#define XBOX_REPORTED_RAM_MB 64
+#endif
 
 /* Default GPU instance size, used when a caller asks to claim everything. */
 #define XBOX_GPU_INSTANCE_DEFAULT (128u * 1024u)

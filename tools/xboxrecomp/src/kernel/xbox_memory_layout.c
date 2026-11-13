@@ -195,12 +195,27 @@ size_t xbox_GetMappedSize(void)
     return g_memory_size;
 }
 
+/* Reserve a bus range beyond the contiguous window for ordinary guest heap pages. */
+uint32_t xbox_PhysRamName(uint32_t va)
+{
+    if (XBOX_CONTIG_MB == 64 || !g_memory_size ||
+            va < XBOX_HEAP_BASE || va >= g_memory_size || va >= XBOX_CONTIG_SIZE)
+        return va;
+    size_t mirror = (XBOX_CONTIG_SIZE + g_memory_size - 1) / g_memory_size;
+    uint64_t alias = (uint64_t)mirror * g_memory_size;
+    if (mirror <= XBOX_NUM_MIRRORS && g_mirror_views[mirror - 1] &&
+            alias + g_memory_size <= 0x10000000u)
+        return (uint32_t)alias + va;
+    return va;
+}
+
 static size_t xbox_TiledApertureSize(void)
 {
     uint64_t end = XBOX_NV2A_BASE < 0x100000000ULL
                  ? XBOX_NV2A_BASE : 0x100000000ULL;
     size_t max = (size_t)(end - XBOX_TILED_BASE);
-    return g_memory_size < max ? g_memory_size : max;
+    size_t size = XBOX_CONTIG_MB > 64 ? XBOX_CONTIG_SIZE : g_memory_size;
+    return size < max ? size : max;
 }
 
 static HANDLE g_nv2a_ack_thread = NULL;
@@ -2049,6 +2064,7 @@ int g_force_return = 0;
 RECOMP_TLS uint16_t g_fp_control_word = 0x037Fu;
 RECOMP_TLS int g_fp_cmp = 0;
 RECOMP_TLS uint16_t g_fp_cc = 0x4000;
+RECOMP_TLS uint32_t g_mxcsr = 0x1F80u;
 
 /* Defined below, with the other guest registers. */
 extern RECOMP_TLS uint32_t g_ebp;
@@ -2577,6 +2593,7 @@ RECOMP_TLS uint32_t g_ebp = 0;
  * wrong way. Thread-local, because `std` and the `cld` that undoes it can land
  * in different lifted bodies of the same guest routine. */
 RECOMP_TLS int g_df = 0;
+RECOMP_TLS uint32_t g_eflags = 0x00000202u;
 
 /* ICALL trace ring buffer */
 volatile uint32_t g_icall_trace[16] = {0};
@@ -4114,7 +4131,10 @@ int xbox_ContiguousFree(uint32_t addr)
 }
 #if defined(__ANDROID__)
 static uintptr_t rb_native_base131(void){return (uintptr_t)g_memory_offset;}
-int xbox_ContiguousAliasesReady(void){return g_contig_memory!=NULL && g_tiled_view!=NULL && xbox_TiledApertureSize()>=0x02A0D000u;}
+int xbox_ContiguousAliasesReady(void)
+{
+    return g_contig_memory && g_tiled_view && xbox_TiledApertureSize() >= XBOX_CONTIG_SIZE;
+}
 #endif
 
 /* Size of the block at addr (MmQueryAllocationSize), 0 if not tracked. */

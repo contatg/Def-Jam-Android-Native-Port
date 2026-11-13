@@ -3,6 +3,7 @@
 #endif
 #if defined(__ANDROID__)
 #include "android_rollback131.h"
+#include "guest_window.h"
 #include "platform/xbox_rollback_hooks.h"
 #include "recomp/gen/recomp_types.h"
 #include <pthread.h>
@@ -14,8 +15,8 @@
 #include <time.h>
 #include <errno.h>
 #include <stdio.h>
-#define RB_LO 0x80003000ull
-#define RB_HI 0x82A0D000ull
+#define RB_LO GUEST_WINDOW_LO
+#define RB_HI GUEST_WINDOW_HI
 #define RB_ALIAS 0x70000000ull
 static _Atomic int poisoned;
 static _Atomic unsigned active_faults;
@@ -29,13 +30,17 @@ void android_rollback131_configure(int mode){
     if(configured_mode&&(sysconf(_SC_PAGESIZE)!=4096||(guest_cores&&strcmp(guest_cores,"1")))){
         fprintf(stderr,"[ROLLBACK131] unsupported page size/guest multicore: using existing lockstep without audio arena\n");configured_mode=0;
     }
-    xbox_rollback_watch_range131(0x80003000u,configured_mode?0x82A0D000u:0,0x70000000u);
     setenv("RECOMP_ROLLBACK",configured_mode?"on":"off",1);
     if(configured_mode){
         if(configured_mode==1){setenv("RECOMP_TEST_OBSERVATIONS","1",1);setenv("RECOMP_ROLLBACK_SOAK","6",1);}
         else unsetenv("RECOMP_ROLLBACK_SOAK");
     }else unsetenv("RECOMP_ROLLBACK_SOAK");
     fprintf(stderr,"[ROLLBACK131] mode=%d (0=off 1=offline-verify 2=experimental-online); implementation present, phone/hash validation required\n",configured_mode);
+}
+
+void android_rollback131_watch_heap(uint32_t lo, uint32_t hi)
+{
+    xbox_rollback_watch_range131(lo, hi, (uint32_t)RB_ALIAS);
 }
 
 static PVECTORED_EXCEPTION_HANDLER fault_fn;
@@ -51,7 +56,8 @@ void android_rollback131_poison(void){atomic_store_explicit(&poisoned,1,memory_o
 int android_rollback131_healthy(void){return !atomic_load_explicit(&poisoned,memory_order_acquire);}
 void *android_rollback131_canonical(void *host){
     uintptr_t a=(uintptr_t)host,base=(uintptr_t)g_xbox_mem_offset;
-    if(a>=base+0xF0000000ull&&a<base+0xF4000000ull)a-=RB_ALIAS;
+    if (a >= base + RB_LO + RB_ALIAS && a < base + RB_HI + RB_ALIAS)
+        a -= RB_ALIAS;
     return (void *)a;
 }
 int android_rollback131_basic_available(void){return sysconf(_SC_PAGESIZE)==4096 && xbox_ContiguousAliasesReady() && android_rollback131_healthy();}

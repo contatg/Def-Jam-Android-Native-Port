@@ -25,6 +25,11 @@
 #include "apu_state.h"
 #include "fpconv.h"
 
+#ifndef XBOX_CONTIG_MB
+#define XBOX_CONTIG_MB 64
+#endif
+#define APU_WINDOW_BYTES ((uint32_t)XBOX_CONTIG_MB << 20)
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -125,10 +130,10 @@ static uint32_t dsp_doorbell_from_sge(MCPXAPUState *d)
     uint32_t table = d->regs[NV_PAPU_GPSADDR] & 0x3FFFFFFFu;
     uint32_t page0;
 
-    if (!table || table >= 0x04000000u)
+    if (!table || table > APU_WINDOW_BYTES - sizeof(uint32_t))
         return 0;
     page0 = *(const uint32_t *)(d->ram_ptr + 0x80000000u + table) & 0x3FFFFFFFu;
-    if (!page0 || page0 >= 0x04000000u)
+    if (!page0 || page0 > APU_WINDOW_BYTES - 0x810u - sizeof(uint32_t))
         return 0;
     return 0x80000000u + page0 + 0x810u;
 }

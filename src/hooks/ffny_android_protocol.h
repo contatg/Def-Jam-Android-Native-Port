@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (c) 2026 sweeax-exe (FFNY Online)
- * PC fingerprint and packet layout adapted from FFNY Online build 78.
+ * Packet layout from the Android client specification. The fingerprint
+ * follows FFNY Online v0.13.0-remaster.81 (928b57e4).
  */
 #ifndef DEFJAM_FFNY_ANDROID_PROTOCOL_H
 #define DEFJAM_FFNY_ANDROID_PROTOCOL_H
@@ -8,9 +9,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#define FFNY_ANDROID_PROTOCOL_BUILD 78u
+#define FFNY_ANDROID_PROTOCOL_BUILD 81u
 #define FFNY_ANDROID_PROTOCOL_VERSION "0.13.0"
-#define FFNY_ANDROID_LOCKSTEP_RULES 4u
+#define FFNY_ANDROID_LOCKSTEP_RULES 5u
 #define FFNY_ANDROID_PLATFORM 1u
 #define FFNY_ANDROID_CAPS 0u
 
