@@ -13,6 +13,8 @@ The Android 1.4 source, build scripts and room server are available here. The po
 
 The experimental ARM64 build includes rollback, the build 81 guest memory layout (192 MiB contiguous and 128 MiB reported to the game), Discord sign-in, and restored custom touch controls. The development branch includes the relay packet and checksum tests. Official relay access and two-device match validation are pending. [Android development status](https://github.com/contatg/Def-Jam-Android-Native-Port/blob/ffny-online-android/SOURCE.md#android-progress-update-2026-11-13).
 
+[Read the v1.5 preview notes](https://github.com/contatg/Def-Jam-Android-Native-Port/blob/ffny-online-android/releases/v1.5-preview.md).
+
 ## Your original game is required
 
 The original Xbox disc/ISO and extracted game data are not distributed here.
