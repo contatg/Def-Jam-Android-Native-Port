@@ -2,6 +2,8 @@
  * (netplay/relay/accounts). PC protocol; Android account UI/HTTPS/Keystore is adapted in OnlineAccount133.java. */
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,6 +29,7 @@ const char *account_privacy_url(void);
  * only; json as POST /api/matches takes it); it counts once the other players' games agree, and
  * the statistics are fetched again a moment later. */
 void account_report_match(const char *json);
+int android_online_device_id(uint8_t out[16]);
 void account_fetch_stats(void);                 /* the statistics and the leaderboard, in the background */
 void account_fetch_stats_page(int page);        /* the same with that leaderboard page (10 places, 0 = top 10) */
 int account_stats_busy(void);

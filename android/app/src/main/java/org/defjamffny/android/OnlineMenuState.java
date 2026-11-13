@@ -21,7 +21,7 @@ final class OnlineMenuState {
         if(address==null||address.trim().isEmpty())return true;
         String host=address.trim().toLowerCase(java.util.Locale.ROOT);int colon=host.indexOf(':');if(colon>=0)host=host.substring(0,colon);
         if(host.endsWith("."))host=host.substring(0,host.length()-1);
-        return host.equals("play.defjam.online")||host.equals("49.12.78.32")||host.equals("na.defjam.online")||host.equals("5.161.206.134");
+        return host.equals("play.defjam.online")||host.equals("49.12.78.32")||host.equals("na.defjam.online")||host.equals("5.161.206.134")||host.equals("west.defjam.online")||host.equals("5.78.214.178");
     }
     static int roomMode(boolean hidden,boolean passwords){return !hidden?0:passwords?1:2;}
     static boolean validServer(String s){

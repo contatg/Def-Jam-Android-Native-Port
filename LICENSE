@@ -1,3 +1,10 @@
+Port code follows the MIT license below except where a file or its upstream notice
+identifies another license. The build-78 FFNY Online transport in
+src/hooks/ffny_android_protocol.h is GPL-3.0-or-later, copyright (c) 2026
+sweeax-exe (FFNY Online). The full text is in licenses/FFNY-Online-GPL-3.0.txt.
+The combined native client that links this transport is distributed under
+GPL-3.0-or-later. See CREDITS.md for the separate third-party notices.
+
 MIT License
 
 Copyright (c) 2026 Vlad Yanhursky

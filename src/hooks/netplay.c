@@ -35,12 +35,14 @@
 #include "host.h"
 #if defined(__ANDROID__)
 #include "android_netplay.h"
+#include "ffny_android_protocol.h"
 #include "online_delay126.h"
 #include "online_wait128.h"
 #include "platform/android_hitch.h"
 #include "platform/android_sched.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/time.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -158,11 +160,9 @@ void netplay_crowd_update(void) { sub_00081170(); }
 #define T_PLAYERS     0x1D
 #define T_RANKED      0x1E      /* the ranked queue (relays since build 15) */
 #define T_QUEUE       0x1F
-/* Native Android adaptation of the numbered HELLO / CAPS transport from
- * ffny-online tree ff3b5c8434d653a40d836aad0b78633d60715819, build 31.
- * This is a pinned source protocol compatibility level, not the APK version
- * or the result of the PC updater. Never copy a server's latest number here. */
-#define NETPLAY_PROTOCOL_SOURCE_BUILD132 31u
+/* FFNY partner transport preparation. The Android relay remains disabled
+ * until the full tagged game/client migration and a joint test are ready. */
+#define T_DEVICE_ID 0x30
 #define T_CAPS132     0x20
 #define CAPS_ROLLBACK132 2u
 #define TICKET_LEN    16        /* RANKED: the account service's one-time ticket */
@@ -227,6 +227,8 @@ static struct {
     volatile LONG relay_caps132; /* -1 until a public relay answers; atomic cross-thread */
     ULONGLONG caps_sent132;
     int caps_tries132;
+    int device_tries, device_ack;
+    ULONGLONG device_sent;
     int slot;                       /* this client's slot in its room */
     char status[192];
     /* session */
@@ -426,9 +428,8 @@ static void send_hello(void)
     b[n++] = (uint8_t)len;
     memcpy(b + n, N.name, (size_t)len); n += len;
     if (project_server_endpoint(N.server_text)) {
-        /* The public relay's numbered HELLO extension, after the full name.
-         * Keep the existing profile fingerprint and room-code bytes intact. */
-        put32(b + n, NETPLAY_PROTOCOL_SOURCE_BUILD132); n += 4;
+        ffny_android_hello_suffix(b + n, 0);
+        n += 9;
     }
     send_raw(b, n);
 }
@@ -439,8 +440,18 @@ static void netplay_send_caps132(void)
     int n = header(b, T_CAPS132);
     memcpy(b + n, N.token, 8); n += 8;
     /* Ordinary rooms only. Do not claim King of the Hill/watch support. */
-    put32(b + n, 0); n += 4;
+    put32(b + n, FFNY_ANDROID_CAPS); n += 4;
     send_raw(b, n);
+}
+
+static void send_partner_device_id(void)
+{
+    uint8_t id[16], b[6 + 8 + 17];
+    if (!android_online_device_id(id)) return;
+    int n = header(b, T_DEVICE_ID);
+    memcpy(b + n, N.token, 8); n += 8;
+    ffny_android_device_body(b + n, id);
+    send_raw(b, n + 17);
 }
 
 static void send_token_only(uint8_t type, uint32_t extra, int with_extra)
@@ -469,6 +480,8 @@ static void request(uint8_t type, const uint8_t *body, int len)
     uint8_t b[sizeof(N.pend)];
     int n;
     if (!N.lobby || !N.have_token || len < 0 || len > (int)sizeof(b) - 14) return;
+    if (project_server_endpoint(N.server_text) &&
+        (type == T_CREATE_PRIVATE || type == T_JOIN_PRIVATE || type == T_RANKED)) return;
     n = header(b, type);
     memcpy(b + n, N.token, 8); n += 8;
     if (len) memcpy(b + n, body, (size_t)len);
@@ -1064,7 +1077,9 @@ static void netplay_relay_error132(int code)
         state != NETPLAY_CONNECTING && !project_server_endpoint(N.server_text) &&
         N.pend_len >= 14 && (N.pend[5] == T_CREATE_PRIVATE || N.pend[5] == T_JOIN_PRIVATE);
     if (code == 10) text = private_password ? "Private room: password missing or incorrect." :
-        "Server requires an updated compatible online client. This Android port is not accepted.";
+        "Update the app to connect to this relay.";
+    if (code == 11 && project_server_endpoint(N.server_text))
+        text = "This installation already has an active online session.";
     recoverable = N.lobby && N.have_token && state != NETPLAY_CONNECTING &&
         (code == 1 || code == 2 || code == 3 || code == 8 || code == 9 || private_password);
     if (recoverable && code == 9 && N.roomv.in_room && N.pend_len &&
@@ -1128,6 +1143,15 @@ static void on_packet(const uint8_t *b, int len)
             N.have_token = 1;
             if (N.lobby) {
                 if (np_load(&N.state) == NETPLAY_CONNECTING) {
+                    if (project_server_endpoint(N.server_text)) {
+                        netplay_send_caps132();
+                        N.caps_tries132 = 1;
+                        N.caps_sent132 = GetTickCount64();
+                        send_partner_device_id();
+                        N.device_tries = 1;
+                        N.device_sent = N.caps_sent132;
+                        N.device_ack = 0;
+                    }
                     InterlockedExchange(&N.state, NETPLAY_LOBBY);
                     set_status("In the lobby of %s.", N.server_text);
                     netplay_lobby_list(0xFF);
@@ -1180,6 +1204,10 @@ static void on_packet(const uint8_t *b, int len)
             int from = N.lobby ? (b[6] < MAXP ? N.pos_of_slot[b[6]] : -1) : (b[6] ? 1 : 0);
             on_data(from, b + 7, len - 7);
         }
+        break;
+    case T_DEVICE_ID:
+        if (N.lobby && N.have_token && len >= 7 && b[6] == 0 &&
+            project_server_endpoint(N.server_text)) N.device_ack = 1;
         break;
     case T_CAPS132:
         if (N.lobby && N.have_token && len >= 10 && project_server_endpoint(N.server_text)) {
@@ -1345,6 +1373,12 @@ static DWORD WINAPI net_thread(LPVOID unused)
             else InterlockedExchange(&N.relay_caps132, 0);
             N.caps_sent132 = now;
         }
+        if (N.lobby && N.have_token && !N.device_ack && N.device_tries < 5 &&
+            project_server_endpoint(N.server_text) && now - N.device_sent >= RETRY_MS) {
+            send_partner_device_id();
+            ++N.device_tries;
+            N.device_sent = now;
+        }
         /* Hub: our ping for this START, until the match is under way. */
         if (N.lobby && N.match_live && !N.match_seen && now - N.last_rtt_sent >= 100)
             send_rtt();
@@ -1401,7 +1435,8 @@ static int project_server_endpoint(const char *server)
     memcpy(host, server, n); host[n] = 0;
     if (n && host[n - 1] == '.') host[n - 1] = 0;
     return !_stricmp(host, PROJECT_SERVER_NAME) || !_stricmp(host, PROJECT_SERVER_ADDRESS) ||
-        !_stricmp(host,"na.defjam.online") || !_stricmp(host,"5.161.206.134");
+        !_stricmp(host,"na.defjam.online") || !_stricmp(host,"5.161.206.134") ||
+        !_stricmp(host,"west.defjam.online") || !_stricmp(host,"5.78.214.178");
 }
 
 static int netplay_relay_allows_rollback132(void)
@@ -1429,31 +1464,19 @@ static int resolve(const char *server)
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
-    if (getaddrinfo(host, port, &hints, &res) || !res) {
-        /* The project's server by its address when its name does not resolve (a resolver that
-         * still remembers the name as missing, or a DNS outage). */
-        res = NULL;
-        char canonical133[128];snprintf(canonical133,sizeof canonical133,"%s",host);
-        size_t length133=strlen(canonical133);if(length133&&canonical133[length133-1]=='.')canonical133[length133-1]=0;
-        const char *fallback133=(!_stricmp(canonical133,"na.defjam.online")||!_stricmp(canonical133,"5.161.206.134"))?"5.161.206.134":PROJECT_SERVER_ADDRESS;
-        if (!project_server_endpoint(host) || getaddrinfo(fallback133, port, &hints, &res) || !res)
-            return -1;
-        fprintf(stderr, "[NETPLAY] %s did not resolve; using %s\n", host, fallback133);
+    if (getaddrinfo(host, port, &hints, &res) || !res) return -1;
+    /* Also exclude official relay IPs reached through an alias in private mode. */
+    char address[INET_ADDRSTRLEN];
+    const struct sockaddr_in *ipv4 = (const struct sockaddr_in *)res->ai_addr;
+    if (!inet_ntop(AF_INET, &ipv4->sin_addr, address, sizeof(address)) ||
+        project_server_endpoint(address)) {
+        freeaddrinfo(res);
+        return -1;
     }
     memcpy(&N.server, res->ai_addr, res->ai_addrlen);
     N.server_len = (int)res->ai_addrlen;
     freeaddrinfo(res);
     return 0;
-}
-
-/* Same pinned PC source profile used by numbered HELLO. Build26+ hashes
- * the four little-endian build bytes too; omitting them isolates LIST/WHO. */
-static void netplay_profile_fingerprint135(uint8_t out[8])
-{
-    uint32_t h1=2166136261u,h2;const char*v;
-    for(v=DEFJAM_NETPLAY_PC_PROFILE;*v;v++)h1=(h1^(uint8_t)*v)*16777619u;
-    for(int k=0;k<4;k++)h1=(h1^(uint8_t)(NETPLAY_PROTOCOL_SOURCE_BUILD132>>(8*k)))*16777619u;
-    h2=mix32(h1^LOCKSTEP_VERSION);put32(out,h1);put32(out+4,h2);
 }
 
 static int start(const char *server, const char *name, int creating, const char *room, int delay, int lobby)
@@ -1490,10 +1513,7 @@ static int start(const char *server, const char *name, int creating, const char 
     h2 = mix32(h1 ^ LOCKSTEP_VERSION);
     put32(N.build, h1); put32(N.build + 4, h2); // retain private legacy relay profile
     if(project_server_endpoint(N.server_text)){
-        netplay_profile_fingerprint135(N.build);
-        fprintf(stderr,"[NETPROFILE135] PC source=%s build=%u rules=%u fingerprint=%02X%02X%02X%02X%02X%02X%02X%02X; discovery profile aligned, gameplay crossplay unverified\n",
-            DEFJAM_NETPLAY_PC_PROFILE,NETPLAY_PROTOCOL_SOURCE_BUILD132,LOCKSTEP_VERSION,
-            N.build[0],N.build[1],N.build[2],N.build[3],N.build[4],N.build[5],N.build[6],N.build[7]);
+        ffny_android_fingerprint(N.build, 0);
     }
     N.have_token = 0;
     InterlockedExchange(&N.relay_caps132, -1);
@@ -1516,7 +1536,11 @@ static int start(const char *server, const char *name, int creating, const char 
     N.start_seed = 0;
     N.match_count = 0;
     LeaveCriticalSection(&g_cs);
-    if (resolve(server)) { InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("Cannot find the server %s.", server); return -1; }
+    if (resolve(server)) {
+        InterlockedExchange(&N.state, NETPLAY_FAILED);
+        set_status("Cannot use %s as a private relay.", server);
+        return -1;
+    }
     if(np_load(&s_mobile_cancel)!=cancel_generation){set_status("Online connection cancelled.");return -1;}
     N.sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (N.sock == INVALID_SOCKET) { InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("No network socket."); return -1; }
@@ -1530,7 +1554,7 @@ static int start(const char *server, const char *name, int creating, const char 
         closesocket(N.sock); N.sock = INVALID_SOCKET;
         InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("Cannot reach this relay."); return -1;
     }
-    fprintf(stderr,"[NETPLAY] experimental Android ARM64 / PC profile %s, protocol1 rules4; numbered HELLO protocol source31 (Android fork, not PC updater); crossplay not certified\n", DEFJAM_NETPLAY_PC_PROFILE);
+    fprintf(stderr, "[NETPLAY] Android ARM64, private relay protocol\n");
 #endif
     InterlockedExchange(&N.stop,0);
     if(np_load(&s_mobile_cancel)!=cancel_generation){closesocket(N.sock);N.sock=INVALID_SOCKET;return -1;}
@@ -1851,9 +1875,9 @@ void netplay_on_result(uint32_t winners, uint32_t losers, uint32_t code)
         if (winners & (1u << i)) { n += snprintf(json + n, sizeof(json) - n, "%s%d", first ? "" : ",", i); first = 0; }
     n += snprintf(json + n, sizeof(json) - n, "],\"draw\":%s}", (code & 4u) ? "true" : "false");
     if (n >= (int)sizeof(json)) return;
-    fprintf(stderr, "[NETPLAY] match result: winners 0x%X, code 0x%X; reporting it when signed in\n",
+    fprintf(stderr, "[NETPLAY] match result: winners 0x%X, code 0x%X\n",
             (unsigned)winners, (unsigned)code);
-    account_report_match(json);
+    if (project_server_endpoint(N.server_text)) account_report_match(json);
 }
 
 void netplay_sync_point(void)

@@ -696,13 +696,10 @@ void connect_if_needed()
 
 const int HUB_ITEMS = 8, HUB_LEAVE = 7, HUB_RANKED = 1, HUB_VOICE = 6;
 
-// RANKED MATCH waits until ranked play is switched on on the server (docs/ranked-design.md);
-// RECOMP_RANKED=1 shows it for tests.
+// Ranked is closed to Android clients.
 bool ranked_shown()
 {
-    static int on = -1;
-    if (on < 0) on = getenv("RECOMP_RANKED") != nullptr;
-    return on != 0;
+    return false;
 }
 
 // "142 PLAYERS ONLINE - 12 ROOMS" at the bottom right, once the relay has answered a WHO.

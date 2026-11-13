@@ -8,6 +8,8 @@ Project: https://github.com/contatg/Def-Jam-Android-Native-Port
 
 **sweeax-exe and the FFNY Online contributors created FFNY Online, the upstream online multiplayer implementation.** This Android port adapts their networking code and language-pack tooling. contatg maintains the Android integration and the [room server adaptation](server/). [Original FFNY Online project](https://github.com/sweeax-exe/ffny-online) · [MIT license](licenses/FFNY-Online-MIT.txt)
 
+The Android transport preparation in `src/hooks/ffny_android_protocol.h` is derived from [FFNY Online build 78](https://github.com/sweeax-exe/ffny-online/releases/tag/v0.13.0-remaster.78) and carries the upstream GPL-3.0-or-later notice. The existing private relay is based on the earlier MIT implementation. The build-78 transport is linked into the native game client, whose combined distribution is under GPL-3.0-or-later.
+
 ## Recompilation and runtime
 
 Original static recompilation project: Vlad Yanhursky and contributors,
@@ -22,6 +24,7 @@ original Xbox game, upstream recompilation work or third-party components.
 
 ## Preserved license texts
 
+- [FFNY Online GPL-3.0 license text](licenses/FFNY-Online-GPL-3.0.txt)
 - [FFNY Online MIT license](licenses/FFNY-Online-MIT.txt)
 - [Original project license](LICENSE)
 - [xboxrecomp license](licenses/xboxrecomp-MIT.txt)

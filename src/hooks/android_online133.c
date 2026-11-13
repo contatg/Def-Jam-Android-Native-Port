@@ -13,7 +13,7 @@ extern uint32_t netplay_voice_context133(void);
 extern void netplay_voice_send133(uint32_t room,const uint8_t *payload,int len);
 static JavaVM *s_vm;
 static jclass s_account_class;
-static jmethodID s_ranked,s_report,s_fetch_stats,s_voice_settings;
+static jmethodID s_ranked,s_report,s_fetch_stats,s_voice_settings,s_device_id;
 static char s_stats[16384];static int s_stats_busy;
 static pthread_mutex_t s_account_lock=PTHREAD_MUTEX_INITIALIZER;
 static int s_account_state;
@@ -24,6 +24,7 @@ JNIEXPORT void JNICALL Java_org_defjamffny_android_OnlineAccount133_nativeBind(J
     if(!s_vm){fprintf(stderr,"[ACCOUNT133] Android account bridge ready; no boot-time HTTP\n");(*e)->GetJavaVM(e,&s_vm);s_account_class=(*e)->NewGlobalRef(e,c);
         s_ranked=(*e)->GetStaticMethodID(e,c,"rankedTicket","()Ljava/lang/String;");
         s_report=(*e)->GetStaticMethodID(e,c,"reportMatch","(Ljava/lang/String;)V");
+        s_device_id=(*e)->GetStaticMethodID(e,c,"deviceId","()[B");
         s_fetch_stats=(*e)->GetStaticMethodID(e,c,"fetchStats","(I)V");
         s_voice_settings=(*e)->GetStaticMethodID(e,c,"openVoiceSettings","()V");}
 }
@@ -76,6 +77,23 @@ int account_ranked_ticket(char out[33])
     else if(value){const char*t=(*e)->GetStringUTFChars(e,value,NULL);if(t&&strlen(t)==32){ok=1;for(int i=0;i<32;i++)if(!((t[i]>='0'&&t[i]<='9')||(t[i]>='a'&&t[i]<='f')||(t[i]>='A'&&t[i]<='F')))ok=0;if(ok)memcpy(out,t,33);}if(t)(*e)->ReleaseStringUTFChars(e,value,t);}
     if(value)(*e)->DeleteLocalRef(e,value);if(attached)(*s_vm)->DetachCurrentThread(s_vm);return ok;
 }
+int android_online_device_id(uint8_t out[16])
+{
+    int attached, ok = 0;
+    JNIEnv *env = account_env133(&attached);
+    if (!env) return 0;
+    jbyteArray id = s_device_id ?
+        (jbyteArray)(*env)->CallStaticObjectMethod(env, s_account_class, s_device_id) : NULL;
+    if (id && !(*env)->ExceptionCheck(env) && (*env)->GetArrayLength(env, id) == 16) {
+        (*env)->GetByteArrayRegion(env, id, 0, 16, (jbyte *)out);
+        ok = !(*env)->ExceptionCheck(env);
+    }
+    if ((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
+    if (id) (*env)->DeleteLocalRef(env, id);
+    if (attached) (*s_vm)->DetachCurrentThread(s_vm);
+    return ok;
+}
+
 void account_report_match(const char*json)
 {
     if(account_state()!=ACCOUNT_IN||!json||strlen(json)>16384||!s_report)return;

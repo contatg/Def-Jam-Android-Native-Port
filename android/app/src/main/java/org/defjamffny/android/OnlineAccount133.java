@@ -46,6 +46,7 @@ final class OnlineAccount133 {
     private static final AtomicInteger GENERATION=new AtomicInteger();
     private static final AtomicBoolean POLLING=new AtomicBoolean();
     private static Context app;
+    private static byte[] installDeviceId;
     private static volatile int state; // same AccountState order as PC
     private static volatile String token="",name="",username="",reason="",stats="";
     private static volatile boolean bound,gameForeground;
@@ -128,7 +129,7 @@ final class OnlineAccount133 {
         if(!path.startsWith("/")||path.contains("\r")||path.contains("\n"))throw new IOException("path");
         HttpsURLConnection c=(HttpsURLConnection)new URL(BASE+path).openConnection();
         c.setInstanceFollowRedirects(false);c.setConnectTimeout(7000);c.setReadTimeout(10000);c.setRequestMethod(method);
-        c.setRequestProperty("Accept","application/json, text/plain");c.setRequestProperty("User-Agent","DefJam-Android/133");
+        c.setRequestProperty("Accept","application/json, text/plain");c.setRequestProperty("User-Agent",AccountProtocol133.USER_AGENT);
         if(!bearer.isEmpty()){if(!hex(bearer,64))throw new IOException("token");c.setRequestProperty("Authorization","Bearer "+bearer);}
         try{
             if(body!=null){byte[] b=body.getBytes(StandardCharsets.UTF_8);c.setDoOutput(true);c.setRequestProperty("Content-Type","application/json");c.setFixedLengthStreamingMode(b.length);try(OutputStream o=c.getOutputStream()){o.write(b);}}
@@ -209,7 +210,50 @@ final class OnlineAccount133 {
         String t=token;if(state!=3||t.isEmpty()||Looper.myLooper()==Looper.getMainLooper())return "";
         try{Reply r=request("POST","/api/ranked/ticket?format=text",t,null);if(r.code==401)expired(t);String ticket=r.body.trim();if(r.code==200&&hex(ticket,32))return ticket;}catch(Exception ignored){}return "";
     }
-    static void reportMatch(String json){if(state!=3||json==null||json.length()>16384)return;final String t=token;IO.execute(()->{try{request("POST","/api/matches",t,json);}catch(Exception ignored){}});}
+    // Accessed by the native network worker and the match-report executor in :game.
+    static synchronized byte[] deviceId() throws Exception {
+        if (installDeviceId != null) return installDeviceId.clone();
+        AtomicFile file = new AtomicFile(new File(app.getNoBackupFilesDir(), "ffny-install-id"));
+        byte[] seed;
+        try (FileInputStream input = file.openRead()) {
+            seed = new byte[32];
+            new DataInputStream(input).readFully(seed);
+            if (input.read() != -1) throw new IOException("Invalid install ID seed");
+        } catch (FileNotFoundException missing) {
+            if (file.getBaseFile().exists()) throw missing;
+            seed = new byte[32];
+            new SecureRandom().nextBytes(seed);
+            FileOutputStream output = file.startWrite();
+            try {
+                output.write(seed);
+                file.finishWrite(output);
+            } catch (IOException failure) {
+                file.failWrite(output);
+                throw failure;
+            }
+        }
+        try {
+            installDeviceId = AccountProtocol133.hashInstallId(seed);
+            return installDeviceId.clone();
+        } finally {
+            java.util.Arrays.fill(seed, (byte)0);
+        }
+    }
+
+    static void reportMatch(String json) {
+        if (serviceDisabled148() || state != 3 || json == null || json.length() > 16384) return;
+        final String currentToken = token;
+        IO.execute(() -> {
+            try {
+                JSONObject report = new JSONObject(json);
+                JSONObject fairPlay = report.optJSONObject("ac");
+                if (fairPlay == null) fairPlay = new JSONObject();
+                fairPlay.put("pc", AccountProtocol133.hex(deviceId()));
+                report.put("ac", fairPlay);
+                request("POST", "/api/matches", currentToken, report.toString());
+            } catch (Exception ignored) { }
+        });
+    }
     static void showRegion(Activity a){ZeroTier148.show(a,null);}
     static void enter(Activity a,Runnable accepted){ZeroTier148.enter(a,accepted);}
     static void show(Activity a){ZeroTier148.show(a,null);}
