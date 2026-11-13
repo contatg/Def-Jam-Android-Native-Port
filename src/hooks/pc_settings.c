@@ -65,6 +65,7 @@ static RecompSetting g_display_settings[] = {
     {"graphics","fxaa145",RECOMP_SETTING_INT,-1,-1,1,NULL,NULL,0,"-1 inherits previous Android FXAA choice;0 off,1 on. Live in-game graphics menu."},
     {"graphics","hud145",RECOMP_SETTING_INT,-1,-1,1,NULL,NULL,0,"-1 inherits previous Android FPS counter choice;0 off,1 on."},
     {"graphics","hud_position145",RECOMP_SETTING_INT,0,0,2,NULL,NULL,0,"0 top-right,1 top-center,2 top-left."},
+    {"graphics","hud_style",RECOMP_SETTING_INT,0,0,1,NULL,NULL,0,"0 compact,1 classic."},
     {"graphics","precise_barriers144",RECOMP_SETTING_BOOL,1,0,0,NULL,"RECOMP_VK_BARRIERS144",RECOMP_SETTING_RESTART,"Layout-specific Vulkan barriers; conservative GPU mode retains broad dependencies."},
     {"graphics","fsr144",RECOMP_SETTING_INT,0,0,1,NULL,"RECOMP_VK_FSR144",RECOMP_SETTING_RESTART,"AMD FSR1 EASU+RCAS presentation upscaling. Optional GPU cost; no frame generation."},
     {"graphics","screen_filter144",RECOMP_SETTING_INT,0,0,5,NULL,"RECOMP_VK_FILTER144",RECOMP_SETTING_RESTART,"0 original,1 sharpen,2 vivid,3 scanlines,4 CRT,5 tone mapping (SDR)."},

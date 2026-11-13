@@ -9,7 +9,7 @@ void graphics147_request_game(void);
 void graphics148_closed(void);
 void graphics148_editor(void);
 int graphics145_take_request(void);
-/* UI bridge: bit0 HUD visible, bits1..2 position, bit8 requests existing touch editor. */
+/* UI bridge: bit0 HUD visible, bits1..2 position, bit3 classic style, bit8 requests existing touch editor. */
 int graphics145_android_state(int legacy_hud,int language);
 #ifdef __cplusplus
 }

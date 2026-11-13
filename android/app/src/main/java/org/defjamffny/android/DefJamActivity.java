@@ -360,8 +360,8 @@ public final class DefJamActivity extends SDLActivity {
         {
             fpsView = new FrameHudView(this);
             fpsView.setVisibility(showFps?View.VISIBLE:View.GONE);
-            FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(dp(205), dp(54), Gravity.TOP | Gravity.RIGHT);
-            p.setMargins(0, dp(10), 0, 0); addContentView(fpsView, p); hudHandler.post(fpsUpdate);
+            addContentView(fpsView, fpsLayout(0, false));
+            hudHandler.post(fpsUpdate);
         }
         installQuickBar();
         online = new OnlinePanel(this);
@@ -465,7 +465,16 @@ public final class DefJamActivity extends SDLActivity {
 
     private static native void nativeOpenPort145();
     private static native int nativeGraphicsState145(int legacyHud,int language);
-    private int graphicsHudPosition145=-1;
+    private int graphicsHudLayout = -1;
+    private FrameLayout.LayoutParams fpsLayout(int position, boolean classic) {
+        int gravity = Gravity.TOP | (position == 1 ? Gravity.CENTER_HORIZONTAL
+                : position == 2 ? Gravity.LEFT : Gravity.RIGHT);
+        FrameLayout.LayoutParams layout = new FrameLayout.LayoutParams(
+                dp(classic ? 205 : 88), dp(classic ? 54 : 21), gravity);
+        int edge = classic ? 0 : dp(6);
+        layout.setMargins(edge, dp(classic ? 10 : 6), edge, 0);
+        return layout;
+    }
     public void openPortMenu145(){
         if(editor!=null||isFinishing())return;
         touchIdle.reset(android.os.SystemClock.uptimeMillis());releaseStart();
@@ -500,12 +509,12 @@ public final class DefJamActivity extends SDLActivity {
             if(fpsView==null)return;
             int visibility=(state&1)!=0&&editor==null?View.VISIBLE:View.GONE;
             if(fpsView.getVisibility()!=visibility)fpsView.setVisibility(visibility);
-            int position=(state>>1)&3;
-            if(position!=graphicsHudPosition145){
-                graphicsHudPosition145=position;
-                int gravity=Gravity.TOP|(position==1?Gravity.CENTER_HORIZONTAL:position==2?Gravity.LEFT:Gravity.RIGHT);
-                FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(dp(205),dp(54),gravity);
-                lp.setMargins(0,dp(10),0,0);fpsView.setLayoutParams(lp);
+            int layout = state & 0x0e;
+            if (layout != graphicsHudLayout) {
+                graphicsHudLayout = layout;
+                boolean classic = (layout & 8) != 0;
+                fpsView.setClassic(classic);
+                fpsView.setLayoutParams(fpsLayout((layout >> 1) & 3, classic));
             }
         }catch(UnsatisfiedLinkError ignored){}
     }
@@ -538,7 +547,7 @@ public final class DefJamActivity extends SDLActivity {
         }
         if (controls != null) controls.setVisibility(View.VISIBLE);
         quickBar.setVisibility(View.VISIBLE); quickBar.bringToFront();
-        if (fpsView != null) { fpsView.setVisibility(View.VISIBLE); fpsView.bringToFront(); }
+        if (fpsView != null) fpsView.bringToFront();
         touchIdle.reset(android.os.SystemClock.uptimeMillis());appliedInputMode = -1; updateInputMode();
         hideBars();
     }

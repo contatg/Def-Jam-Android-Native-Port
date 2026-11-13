@@ -18,7 +18,7 @@
 
 namespace {
 std::atomic<int> request145{0},editor145{0},language145{0},legacy_hud145{1},hud145{-1},position145{0};
-std::atomic<int> framegen29{0};
+std::atomic<int> framegen29{0},hudStyle{0};
 std::atomic<unsigned> restart148{0};std::atomic<int> closed148{0},active148{0};
 std::atomic<long long> reopen148{0};double leaving148=0,armed148=0;
 static long long clock148(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
@@ -50,6 +50,7 @@ std::string value145(int id){
  if(id==BILINEAR)v=!v;
  if(id==ANISO){if(v==1)return word("Original","Original","Original");snprintf(b,sizeof b,"%dx",v);return b;}
  if(id==SHARPNESS){snprintf(b,sizeof b,"%d%%",100-v/2);return b;}
+ if(id==HUD_STYLE)return v?word("Classic","Antigo","Clásico"):word("Compact","Compacto","Compacto");
  if(id==HUD_POSITION){const char *en[]={"Top right","Top center","Top left"},*pt[]={"Superior direito","Superior central","Superior esquerdo"},*es[]={"Superior derecho","Superior central","Superior izquierdo"};return word(en[v],pt[v],es[v]);}
  if(id==FILTER){const char *en[]={"Original","Sharpen","Vivid","Scanlines","CRT","Tone mapping (SDR)"},*pt[]={"Original","Nitidez","Cores vivas","Linhas de varredura","CRT","Mapeamento de tons"},*es[]={"Original","Nitidez","Colores vivos","Líneas de barrido","CRT","Mapeo de tonos"};return word(en[v],pt[v],es[v]);}
  return v?word("On","Ligado","Activado"):word("Off","Desligado","Desactivado");
@@ -83,7 +84,7 @@ bool apply145(){
  }
  defjam_sched_set_limit145(draft145.value[FPS]);
  d3d8_vk_quality145(draft145.value[FSR],draft145.value[FXAA],draft145.value[FILTER],draft145.value[SHARPNESS]);
- hud145=draft145.value[HUD];position145=draft145.value[HUD_POSITION];
+ hud145=draft145.value[HUD];position145=draft145.value[HUD_POSITION];hudStyle=draft145.value[HUD_STYLE];
  unsigned changes148=0;for(int i=0;i<COUNT;i++)if(rows()[i].restart&&before[i]!=draft145.value[i])changes148|=1u<<(i>=18?18:i);
  if(changes148){restart148.fetch_or(changes148);fprintf(stderr,"[GRAPHICS148] restart-required options mask=0x%X; saved before prompt\n",changes148);}
  draft145.accepted();restart145|=pending;
@@ -117,7 +118,7 @@ void border145(Canvas145 &c){
  for(int corner=0;corner<4;corner++){float x=corner&1?700:60,y=corner&2?415:65,dx=corner&1?-12:12,dy=corner&2?-12:12;c.line(x,y,x+dx,y,CREAM145,2);c.line(x,y,x,y+dy,CREAM145,2);}
 }
 }
-extern "C" void graphics145_ready(void){hud145=recomp_settings_get("graphics","hud145",-1);position145=recomp_settings_get("graphics","hud_position145",0);}
+extern "C" void graphics145_ready(void){hud145=recomp_settings_get("graphics","hud145",-1);position145=recomp_settings_get("graphics","hud_position145",0);hudStyle=stored145(graphics145::HUD_STYLE);}
 extern "C" void graphics145_request(void){request145=1;}
 extern "C" void graphics148_editor(void){editor145=1;}
 extern "C" void graphics148_closed(void){active148=0;closed148=1;reopen148=clock148()+750;request145=0;}
@@ -127,7 +128,7 @@ extern "C" int graphics145_android_state(int legacy_hud,int language){
  legacy_hud145=legacy_hud!=0;language145=std::max(0,std::min(2,language));
  int hud=hud145.load();if(hud<0)hud=legacy_hud;
  int pos=position145.load();pos=std::max(0,std::min(2,pos));
- return (hud?1:0)|(pos<<1)|(editor145.exchange(0)?256:0)|(closed148.exchange(0)?512:0)|(framegen29.exchange(0)?1024:0)|(int)(restart148.exchange(0)<<12);
+ return (hud?1:0)|(pos<<1)|(hudStyle.load()==1?8:0)|(editor145.exchange(0)?256:0)|(closed148.exchange(0)?512:0)|(framegen29.exchange(0)?1024:0)|(int)(restart148.exchange(0)<<12);
 }
 namespace graphics145 {
 void open(){active148=1;leaving148=0;armed148=-1;wait_input147=false;from_game147=false;read145();page145=-1;selected145=0;leave145=0;confirm145=false;status145.clear();}
@@ -180,7 +181,11 @@ bool draw(ImVec2 display){
  bool prev=key145(ImGuiKey_PageUp,ImGuiKey_GamepadL1)||key145(ImGuiKey_Q),next=key145(ImGuiKey_PageDown,ImGuiKey_GamepadR1)||key145(ImGuiKey_E);
  for(int i=0;i<4;i++){float x=327.f+i*90;c.text(pages[i],x,100,11,page145==i?GOLD145:GREY145);if(page145==i)c.line(x,120,x+78,120,RED145,3);if(click&&c.hit(x-4,93,88,32)){page145=i;selected145=0;click=false;}}
  if(prev||next){page145=(page145+(prev?3:1))%4;selected145=0;}
- int ids[COUNT],count=0;for(int i=0;i<COUNT;i++)if(rows()[i].page==page145)ids[count++]=i;
+ int ids[COUNT],count=0;
+ for(int i=0;i<COUNT;i++)if(i!=HUD_STYLE&&rows()[i].page==page145){
+  ids[count++]=i;
+  if(i==HUD_POSITION)ids[count++]=HUD_STYLE;
+ }
  selected145=std::max(0,std::min(count-1,selected145));if(up)selected145=(selected145+count-1)%count;if(down)selected145=(selected145+1)%count;
  if(left||right)draft145.step(ids[selected145],left?-1:1);
  for(int at=0;at<count;at++){

@@ -31,6 +31,7 @@ final class HakuXOptions36 {
         out.putExtra(PREFIX+"upscale",p.getString(PREFIX+"upscale","bilinear"));
         for(String key:new String[]{"fxaa","uncap","a610_compat"})out.putExtra(PREFIX+key,p.getBoolean(PREFIX+key,false));
         for(String key:new String[]{"async","prebuild","touch","fps"})out.putExtra(PREFIX+key,p.getBoolean(PREFIX+key,true));
+        out.putExtra(PREFIX+"fps_style",p.getString(PREFIX+"fps_style","compact"));
         if(p.getBoolean(PREFIX+"custom_driver",false)){
             if(customDriverAvailable(c))out.putExtra(PREFIX+"driver_library",p.getString("driver_library",""));
             else Toast.makeText(c,tr("Imported driver missing; using the system driver.","Driver importado ausente; usando o driver do sistema.","Falta el controlador importado; se usará el del sistema."),Toast.LENGTH_LONG).show();
@@ -75,6 +76,9 @@ final class HakuXOptions36 {
         toggle(a,root,tr("Preload cached shaders","Pré-carregar shaders salvos","Precargar shaders guardados"),"prebuild",true);
         toggle(a,root,tr("Touch controls","Controles na tela","Controles táctiles"),"touch",true);
         toggle(a,root,tr("FPS counter","Contador de FPS","Contador FPS"),"fps",true);
+        choice(a,root,tr("FPS counter style","Estilo do contador de FPS","Estilo del contador de FPS"),
+            new String[]{tr("Compact","Compacto","Compacto"),tr("Classic","Antigo","Clásico")},
+            new String[]{"compact","classic"},"fps_style","compact");
         toggle(a,root,tr("Uncapped timing (experimental)","Destravar ritmo (experimental)","Ritmo desbloqueado (experimental)"),"uncap",false);
         add(root,PortUi.text(a,tr("Uncapped timing may alter game speed. Frame generation is available only in native Vulkan mode.","Destravar o ritmo pode alterar a velocidade do jogo. O framegen permanece apenas no Vulkan nativo.","Desbloquear el ritmo puede cambiar la velocidad. El framegen está solo en Vulkan nativo."),11,PortUi.MUTED,false));
         Button driver=PortUi.button(a,"",false);Runnable showDriver=()->driver.setText(tr("Driver","Driver","Controlador")+":  "+

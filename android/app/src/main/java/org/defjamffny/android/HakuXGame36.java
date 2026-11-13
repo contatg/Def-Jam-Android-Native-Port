@@ -39,7 +39,7 @@ public final class HakuXGame36 extends SDLActivity {
     private String disc="fd:-1",openError="";
     private volatile String driverError="";
     private volatile String attemptedLibrary="";
-    private boolean ready,active,moving,showFps;
+    private boolean ready,active,moving,showFps,classicFps;
     private HakuXConfig36 config;
     private HakuXControls36 controls;
     private TextView loading,fps;
@@ -62,7 +62,16 @@ public final class HakuXGame36 extends SDLActivity {
         controls.setShown(config.touch);controls.setStick(runtime.getBoolean("analog",true));controls.setRightStick(runtime.getBoolean("right_stick",true));controls.setOpacity(runtime.getInt("opacity",0));
         mLayout.addView(controls,new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
         loading=overlay(tr("Starting emulator…","Iniciando emulador…","Iniciando emulador…"),RelativeLayout.CENTER_IN_PARENT);
-        fps=overlay("",RelativeLayout.ALIGN_PARENT_TOP);fps.setTextColor(0xffe5e9ed);showFps=config.fps;fps.setVisibility(View.GONE);
+        fps=overlay("",RelativeLayout.ALIGN_PARENT_TOP);
+        fps.setTextColor(0xffe5e9ed);
+        showFps=config.fps;
+        classicFps="classic".equals(in.getStringExtra("hakux36_fps_style"));
+        if (!classicFps) {
+            fps.setTextSize(11);
+            int inset=PortUi.dp(this,6), vertical=PortUi.dp(this,2);
+            fps.setPadding(inset,vertical,inset,vertical);
+        }
+        fps.setVisibility(View.GONE);
         if(!openError.isEmpty())showFailure(tr("Could not open the image.","Não foi possível abrir a imagem.","No se pudo abrir la imagen.")+"\n"+openError);
     }
     private TextView overlay(String text,int rule){
@@ -113,7 +122,7 @@ public final class HakuXGame36 extends SDLActivity {
             if(NativeCoreActivity.nativeGetRelaunch()){restartCore();return;}
             if(NativeCoreActivity.nativeGetQuit()){closeGame();return;}
             if(NativeCoreActivity.nativeGetFrameShown()&&loading.getVisibility()!=View.GONE)loading.setVisibility(View.GONE);
-            if(showFps&&menu==null){float[] s=NativeCoreActivity.nativeGetFrameStats();if(s!=null&&s.length>=2&&s[0]>0){fps.setText(String.format(java.util.Locale.ROOT,"%.0f FPS · %.1f ms",s[0],s[1]));fps.setVisibility(View.VISIBLE);}}
+            if(showFps&&menu==null){float[] s=NativeCoreActivity.nativeGetFrameStats();if(s!=null&&s.length>=2&&s[0]>0){fps.setText(classicFps?String.format(java.util.Locale.ROOT,"%.0f FPS · %.1f ms",s[0],s[1]):Math.round(s[0])+" FPS");fps.setVisibility(View.VISIBLE);}}
         }catch(LinkageError e){showFailure("hakuX JNI: "+e.getMessage());return;}
         handler.postDelayed(poll,350);
     }

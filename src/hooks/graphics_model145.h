@@ -2,7 +2,7 @@
 #define DEFJAM_GRAPHICS_MODEL145_H
 #include <array>
 namespace graphics145 {
-enum { SCALE,ASPECT,FPS,VSYNC,BILINEAR,HUD,HUD_POSITION,FXAA,FSR,SHARPNESS,FILTER,ANISO,GAMMA,VIGNETTE,PRESET,PRELOAD,BARRIERS,TEXTURES,SPATIAL,FG_ENABLE,FG_MULTIPLIER,FG_REFRESH,FG_FLOW,STORY_SUBTITLES,COUNT };
+enum { SCALE,ASPECT,FPS,VSYNC,BILINEAR,HUD,HUD_POSITION,FXAA,FSR,SHARPNESS,FILTER,ANISO,GAMMA,VIGNETTE,PRESET,PRELOAD,BARRIERS,TEXTURES,SPATIAL,FG_ENABLE,FG_MULTIPLIER,FG_REFRESH,FG_FLOW,STORY_SUBTITLES,HUD_STYLE,COUNT };
 struct Row {const char *section,*key;const int *choices;int count,def,page;bool restart;const char *label[3];};
 inline const Row *rows(){
  static const int boolean[]={0,1},scales[]={480,540,720,960,1080,1440,1920,2160},aspects[]={0,1,2,3,5},fps[]={-1,30,60,0},positions[]={0,1,2},bilinear[]={1,0},sharp[]={0,40,80,120,160,200},filters[]={0,1,2,3,4,5},presets[]={0,1,2,3},aniso[]={1,2,4,8,16},spatial[]={0,1,2},engines[]={0,1,2},mult[]={2,3,4},refresh[]={60,90,120},flow[]={25,50,100};
@@ -30,7 +30,8 @@ inline const Row *rows(){
  {"graphics","lsfg30_multiplier",mult,3,2,3,true,{"FG multiplier","Multiplicador FG","Multiplicador FG"}},
  {"graphics","lsfg30_refresh",refresh,3,60,3,true,{"Output target","Alvo de saída","Salida objetivo"}},
  {"graphics","lsfg27_flow",flow,3,25,3,true,{"Optical-flow scale","Escala do fluxo óptico","Escala del flujo óptico"}},
- {"language","story_subtitles",engines,3,1,0,true,{"Story subtitles","Legendas da História","Subtítulos de Historia"}}
+ {"language","story_subtitles",engines,3,1,0,true,{"Story subtitles","Legendas da História","Subtítulos de Historia"}},
+ {"graphics","hud_style",boolean,2,0,0,false,{"FPS counter style","Estilo do contador de FPS","Estilo del contador de FPS"}}
  };return r;
 }
 inline int sanitized(int id,int value){if(id==FPS&&value==45)return 30;const Row &r=rows()[id];for(int i=0;i<r.count;i++)if(r.choices[i]==value)return value;return r.def;}
@@ -44,7 +45,7 @@ struct Draft {
   value[FILTER]=0;value[ANISO]=v==3?4:1;value[GAMMA]=v==1?0:1;
   value[VIGNETTE]=v==1?0:1;value[TEXTURES]=0;value[PRELOAD]=1;value[BARRIERS]=1;
  }
- void step(int id,int direction){const Row &r=rows()[id];int at=0;for(int i=0;i<r.count;i++)if(r.choices[i]==value[id])at=i;at=(at+(direction<0?-1:1)+r.count)%r.count;value[id]=r.choices[at];if(id==PRESET)preset(value[id]);else value[PRESET]=0;}
+ void step(int id,int direction){const Row &r=rows()[id];int at=0;for(int i=0;i<r.count;i++)if(r.choices[i]==value[id])at=i;at=(at+(direction<0?-1:1)+r.count)%r.count;value[id]=r.choices[at];if(id==PRESET)preset(value[id]);else if(id!=HUD_STYLE)value[PRESET]=0;}
 
  bool dirty()const{return value!=saved;}
  bool needs_restart()const{for(int i=0;i<COUNT;i++)if(rows()[i].restart&&value[i]!=saved[i])return true;return false;}
