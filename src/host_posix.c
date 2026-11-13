@@ -32,7 +32,9 @@
 #include <ApplicationServices/ApplicationServices.h>
 #endif
 
+#if !defined(__ANDROID__)
 #include "app_icon_rgba.h"   /* generated from branding/icon/window (cmake/app_icon.cmake) */
+#endif
 #include "d3d8_vk.h"
 #include "hooks/pc_settings.h"
 #include "hooks/pc_input.h"
@@ -170,6 +172,7 @@ static void make_window_main(void *arg)
         return;
     }
     SDL_SetWindowMinimumSize(s_window, 320, 240);
+#if !defined(__ANDROID__)
     {   /* The shield: the window's icon, and on macOS the Dock's. The Linux taskbar and
          * switcher use the desktop entry's icon; this covers a run outside it. */
         SDL_Surface *icon = SDL_CreateSurfaceFrom(APP_ICON_SIZE, APP_ICON_SIZE, SDL_PIXELFORMAT_RGBA32,
@@ -179,6 +182,7 @@ static void make_window_main(void *arg)
             SDL_DestroySurface(icon);
         }
     }
+#endif
 #if defined(__ANDROID__)
     /* Do not ask SDL's system Vulkan loader for these when a custom Turnip
      * loader may be active. The required Android WSI extensions are fixed. */

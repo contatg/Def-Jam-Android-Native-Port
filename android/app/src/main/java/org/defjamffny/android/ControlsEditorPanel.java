@@ -72,7 +72,7 @@ public final class ControlsEditorPanel extends FrameLayout {
         mapAction=map;visibleAction=visible;
         Button menu=PortUi.button(context,"Menu buttons",false),reset=PortUi.button(context,"Default",false);menuToggle=menu;
         gap(body,buttons(menu,reset),6);
-        Button fixKeys=PortUi.button(context,ZeroTier148.tr("Restore fight buttons","Restaurar botões de luta","Restaurar botones de lucha"),false);
+        Button fixKeys=PortUi.button(context,UiText.tr("Restore fight buttons","Restaurar botões de luta","Restaurar botones de lucha"),false);
         gap(body,fixKeys,6);
         if(context instanceof DefJamActivity)
             gap(body,PortUi.text(context,"Pause the game before editing.",10,PortUi.MUTED,false),8);
@@ -126,9 +126,9 @@ public final class ControlsEditorPanel extends FrameLayout {
                 })));
         map.setOnClickListener(v->view.cycleKey());visible.setOnClickListener(v->view.toggleVisible());
         fixKeys.setOnClickListener(v->PortUi.show(PortUi.dialog(context)
-            .setTitle(ZeroTier148.tr("Restore button mappings?","Restaurar comandos?","¿Restaurar comandos?"))
-            .setMessage(ZeroTier148.tr("Restores fight buttons and makes LT/RT visible. Positions and sizes stay unchanged; tap Save to keep it.","Restaura os comandos de luta e mostra LT/RT. Posições e tamanhos continuam iguais; toque em Salvar para guardar.","Restaura los botones de lucha y muestra LT/RT. Las posiciones y tamaños no cambian; toca Guardar."))
-            .setNegativeButton(UiText.t("Cancel"),null).setPositiveButton(ZeroTier148.tr("Restore","Restaurar","Restaurar"),(d,w)->{view.restoreFightMappings35();updateHint();})));
+            .setTitle(UiText.tr("Restore button mappings?","Restaurar comandos?","¿Restaurar comandos?"))
+            .setMessage(UiText.tr("Restores fight buttons and makes LT/RT visible. Positions and sizes stay unchanged; tap Save to keep it.","Restaura os comandos de luta e mostra LT/RT. Posições e tamanhos continuam iguais; toque em Salvar para guardar.","Restaura los botones de lucha y muestra LT/RT. Las posiciones y tamaños no cambian; toca Guardar."))
+            .setNegativeButton(UiText.t("Cancel"),null).setPositiveButton(UiText.tr("Restore","Restaurar","Restaurar"),(d,w)->{view.restoreFightMappings35();updateHint();})));
         menu.setOnClickListener(v->{
             menuEditing=!menuEditing;view.setVisibility(menuEditing?GONE:VISIBLE);
             fixKeys.setEnabled(!menuEditing);

@@ -36,6 +36,7 @@
 #if defined(__ANDROID__)
 #include "android_netplay.h"
 #include "ffny_android_protocol.h"
+#include "detmath/detmath.h"
 #include "online_delay126.h"
 #include "online_wait128.h"
 #include "platform/android_hitch.h"
@@ -1460,10 +1461,6 @@ static int netplay_relay_allows_rollback132(void)
 
 static int resolve(const char *server)
 {
-#if defined(__ANDROID__)
-    /* Own-server only. No DNS lookup/fallback to the previous public service. */
-    if(!server||!*server||project_server_endpoint(server)){fprintf(stderr,"[ZEROTIER148] own server address required; previous service disabled\n");return -1;}
-#endif
     char host[128], port[16];
     const char *colon = strrchr(server, ':');
     struct addrinfo hints, *res = NULL;
@@ -1506,12 +1503,12 @@ static int start(const char *server, const char *name, int creating, const char 
     InitOnceExecuteOnce(&g_once, init_once, NULL, NULL);
     netplay_stop();
     if (!server || !*server) { InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("Enter the server address first."); return -1; }
-    if (netplay_retry_blocked132(server)) return -1;
-    if (!lobby && project_server_endpoint(server)) {
+    if (project_server_endpoint(server)) {
         InterlockedExchange(&N.state, NETPLAY_FAILED);
-        set_status("Use the online lobby for FFNY Online on Android.");
+        set_status("FFNY Online requires an Android build based on the partner's game tag.");
         return -1;
     }
+    if (netplay_retry_blocked132(server)) return -1;
     snprintf(N.server_text, sizeof(N.server_text), "%s", server);
     snprintf(N.name, sizeof(N.name), "%s", name && *name ? name : "Player");
     /* The verified Discord game name is the account identity for ranked play.
@@ -1556,7 +1553,7 @@ static int start(const char *server, const char *name, int creating, const char 
     LeaveCriticalSection(&g_cs);
     if (resolve(server)) {
         InterlockedExchange(&N.state, NETPLAY_FAILED);
-        set_status("Cannot use %s as a private relay.", server);
+        set_status("Cannot connect to %s.", server);
         return -1;
     }
     if(np_load(&s_mobile_cancel)!=cancel_generation){set_status("Online connection cancelled.");return -1;}
@@ -2352,6 +2349,7 @@ void netplay_on_step(void)
 {
     uint32_t s, target, k, need;
     ULONGLONG waited_since, last_send;
+    recomp_detmath_fenv_guard();
     fight_input();              /* also after a fight went on offline */
     if (!np_load(&N.lockstep)) {
         if (soak_depth()) {     /* tests: the soak counts steps and prepares the save states itself */

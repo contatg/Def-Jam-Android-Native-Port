@@ -1,7 +1,7 @@
 package org.defjamffny.android;
 
 final class OnlineMenuState {
-    static final String DEFAULT_SERVER="";
+    static final String DEFAULT_SERVER="play.defjam.online";
     static final String NA_SERVER="";
     static final int CONNECTION=0,LOBBY=1,ROOM=2,VOTE=3,STARTING=4,CREATE=5,JOIN=6;
     static boolean linked(int state){return state==4||state==6;}

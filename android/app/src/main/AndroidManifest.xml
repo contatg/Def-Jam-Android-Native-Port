@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
 
-    <queries><package android:name="com.zerotier.one" /><package android:name="com.rfandango.haku_x" /></queries>
+    <queries><package android:name="com.rfandango.haku_x" /></queries>
 
     <application
         android:allowBackup="false"

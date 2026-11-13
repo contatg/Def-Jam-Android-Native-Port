@@ -444,7 +444,7 @@ public final class LauncherActivity extends Activity {
 
         LinearLayout tools = card("Quick access", "Everything you need before entering the game.");
         Button compatibility136 = button("Fix Mali / PowerVR", false);
-        Button account133 = button("ZeroTier / Online", false);
+        Button account133 = button(UiText.tr("FFNY Online / Discord", "FFNY Online / Discord", "FFNY Online / Discord"), false);
         Button reports35 = button(lsfgText27("Error reports","Relatórios de erro","Informes de error"), false);
         Button about = button("About / Updates", false);
         Button[] toolButtons = {compatibility136, account133, reports35, about};
@@ -456,7 +456,7 @@ public final class LauncherActivity extends Activity {
             tools.addView(tool, item);
         }
         compatibility136.setOnClickListener(v -> GpuCompatibility136.show(this));
-        account133.setOnClickListener(v -> ZeroTier148.show(this, null));
+        account133.setOnClickListener(v -> OnlineAccount133.show(this));
         reports35.setOnClickListener(v -> CrashReport35.show(this));
         about.setOnClickListener(v -> showAbout());
         addCard(right, tools);

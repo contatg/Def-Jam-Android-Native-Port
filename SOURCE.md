@@ -20,7 +20,9 @@ The source includes changes made after the release APK was built. A clean Androi
 
 ## FFNY Online Android development
 
-The transport work uses the PC reference [build 78](https://github.com/sweeax-exe/ffny-online/releases/tag/v0.13.0-remaster.78), game commit `6c0ca28bbf0ab7c8f5ee99f10e4f6b0460c18c98`, toolkit pin `864e4ff6eec58f7a18d708387aff3398cf262ef9`. This branch still builds the 1.4 game code. The build number in the packet helpers identifies the wire format under test. The public relay and its account HTTP requests remain disabled in this branch.
+The transport work uses the PC reference [build 78](https://github.com/sweeax-exe/ffny-online/releases/tag/v0.13.0-remaster.78), game commit `6c0ca28bbf0ab7c8f5ee99f10e4f6b0460c18c98`, toolkit pin `864e4ff6eec58f7a18d708387aff3398cf262ef9`. This branch still builds the 1.4 game code. The build number in the packet helpers identifies the wire format under test. The account screen uses the Discord browser sign-in on the partner account service. The public game relay remains disabled in this branch. The 1.4 Android build must not advertise a partner build number.
+
+Android now compiles the deterministic math sources from [build 80](https://github.com/sweeax-exe/ffny-online/tree/v0.13.0-remaster.80/src/detmath) and checks the guest thread's floating-point mode at each simulation step. The upstream vector test produced 55 matching hashes on x86-64 and emulated ARM64 (1,000,000 inputs per set). This tests math functions only. Gameplay checksum parity is pending.
 
 Before enabling the partner relay:
 

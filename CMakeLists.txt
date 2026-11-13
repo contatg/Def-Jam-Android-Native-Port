@@ -178,11 +178,22 @@ if(DEFJAM_BUILD_GAME)
             ${RECOMP_GEN_SOURCES})
     endif()
     target_compile_features(${DEFJAM_GAME_TARGET} PRIVATE cxx_std_17)
+    if(ANDROID)
+        # FFNY Online build 80: route the lifted game's transcendentals through
+        # the same implementation as the desktop client.
+        target_sources(${DEFJAM_GAME_TARGET} PRIVATE
+            src/detmath/detmath.c
+            src/detmath/detmath_select.c)
+        set_property(SOURCE ${RECOMP_GEN_SOURCES} src/recomp_manual.c APPEND PROPERTY
+            COMPILE_OPTIONS "-include;${CMAKE_CURRENT_SOURCE_DIR}/src/detmath/detmath_redirect.h")
+    endif()
     if(WIN32)
         target_link_libraries(${DEFJAM_GAME_TARGET} PRIVATE xboxrecomp recomp_settings defjam_imgui d3d11 dxgi dxguid xinput winmm dbghelp shell32 comdlg32)
     else()
         # One SDL for the window, the sound and the pads: SDL3, the system's.
-        defjam_app_icon(${DEFJAM_GAME_TARGET})
+        if(NOT ANDROID)
+            defjam_app_icon(${DEFJAM_GAME_TARGET})
+        endif()
         target_link_libraries(${DEFJAM_GAME_TARGET} PRIVATE xboxrecomp recomp_settings defjam_imgui
                               SDL3::SDL3 ${CMAKE_DL_LIBS} m)
         if(NOT ANDROID)

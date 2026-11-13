@@ -33,7 +33,6 @@ public final class DefJamActivity extends SDLActivity {
     private VirtualControlsView controls;
     private ControlsEditorPanel editor;
     private OnlinePanel online;
-    private OnlineNamePrompt129 onlineNamePrompt;
     private VoiceChat133 voice133;
     private OnlineMenuEntry137 menuEntry137;
     private static native int nativeOnlineEntryState137();
@@ -202,19 +201,16 @@ public final class DefJamActivity extends SDLActivity {
             }
             // Returning to a live room must not rename, reset or reconnect it.
             if(nativeOnlineSession()){
-                openOnlineWithName129("Player");
+                openOnlineWithName129(OnlineAccount133.gameName());
                 return;
             }
-            ZeroTier148.enter(this,()->openOnlineWithName129(ZeroTier148.name(this)));
+            OnlineAccount133.enter(this, () -> openOnlineWithName129(OnlineAccount133.gameName()));
         } catch(UnsatisfiedLinkError unavailable){
             android.widget.Toast.makeText(this,UiText.t("Online native module is unavailable in this APK."),android.widget.Toast.LENGTH_SHORT).show();
         }
     }
     private boolean openOnlineWithName129(String player){
-        android.content.SharedPreferences p=getSharedPreferences("online",0);
-        String host=OnlineMenuState.endpoint(p.getBoolean("custom_relay_enabled114",false),p.getString("server",""),p.getString("relay_region133","eu"));
-        if(host.isEmpty()){ZeroTier148.show(this,null);return false;}
-        if(!nativeOpenOnline(host,player)){
+        if(!nativeOpenOnline(OnlineMenuState.DEFAULT_SERVER, player)){
             android.widget.Toast.makeText(this,UiText.t("Open Online from the game's main menu."),android.widget.Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -336,8 +332,7 @@ public final class DefJamActivity extends SDLActivity {
         forceLandscape();
         new File(root(), "game").mkdirs();
         super.onCreate(state);
-        OnlineAccount133.init(this,true); // local JNI/voice callback bridge only; community HTTP is disabled
-        ZeroTier148.migrate(this);
+        OnlineAccount133.init(this,true);
         voice133=new VoiceChat133(this);
         menuEntry137=new OnlineMenuEntry137(this);
         touchIdle.reset(android.os.SystemClock.uptimeMillis());
@@ -487,13 +482,13 @@ public final class DefJamActivity extends SDLActivity {
         String[] labels={"Resolução interna","Formato da tela","","Sincronização vertical","","","","","","","","Filtro anisotrópico","","","","Pré-carregar shaders","Sincronização Vulkan","Pacotes de textura","Upscaling / geração de quadros"};
         if(!UiText.isPortuguese())labels=UiText.isSpanish()?new String[]{"Resolución","Formato","","VSync","","","","","","","","Filtro anisotrópico","","","","Precarga de shaders","Sincronización Vulkan","Texturas","Escala / generación de cuadros"}:new String[]{"Render resolution","Aspect ratio","","VSync","","","","","","","","Anisotropic filtering","","","","Shader preloading","Vulkan synchronization","Texture packs","Upscaling / frame generation"};
         StringBuilder changed=new StringBuilder();for(int i=0;i<labels.length;i++)if((mask&(1<<i))!=0)changed.append("• ").append(labels[i]).append("\n");
-        android.app.AlertDialog choice148=PortUi.dialog(this).setTitle(ZeroTier148.tr("Restart the game?","Reiniciar o jogo?","¿Reiniciar el juego?"))
-            .setMessage(changed+ZeroTier148.tr("\nThese settings are saved and require a restart. Restarting ends the current match.","\nEssas opções foram salvas e precisam reiniciar o jogo para entrar em efeito. Reiniciar encerra a partida atual.","\nLas opciones se guardaron y requieren reiniciar. Reiniciar termina la partida actual."))
-            .setPositiveButton(ZeroTier148.tr("Restart now","Reiniciar agora","Reiniciar ahora"),(d,w)->{
+        android.app.AlertDialog choice148=PortUi.dialog(this).setTitle(UiText.tr("Restart the game?","Reiniciar o jogo?","¿Reiniciar el juego?"))
+            .setMessage(changed+UiText.tr("\nThese settings are saved and require a restart. Restarting ends the current match.","\nEssas opções foram salvas e precisam reiniciar o jogo para entrar em efeito. Reiniciar encerra a partida atual.","\nLas opciones se guardaron y requieren reiniciar. Reiniciar termina la partida actual."))
+            .setPositiveButton(UiText.tr("Restart now","Reiniciar agora","Reiniciar ahora"),(d,w)->{
                 android.content.Intent launch=new android.content.Intent(this,LauncherActivity.class);
                 launch.putExtra("restart_game148",true);launch.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK|android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(launch);finish();
-            }).setNegativeButton(ZeroTier148.tr("Later","Depois","Después"),null).setOnDismissListener(d->restartDialog148=false).create();
+            }).setNegativeButton(UiText.tr("Later","Depois","Después"),null).setOnDismissListener(d->restartDialog148=false).create();
         choice148.show();
         choice148.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).requestFocus();
         choice148.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(PortUi.GOLD);
@@ -586,7 +581,6 @@ public final class DefJamActivity extends SDLActivity {
         OnlineAccount133.gameForeground(false);
         if(menuEntry137!=null)menuEntry137.hide();
         if(voice133!=null)voice133.pause();
-        if(onlineNamePrompt!=null&&!OnlineAccount133.isSigningIn())onlineNamePrompt.dismiss();
         activityPaused=true;
         if(powerPolicy25!=null)powerPolicy25.reset();
         monitorState(true);
@@ -603,7 +597,6 @@ public final class DefJamActivity extends SDLActivity {
     @Override protected void onDestroy() {
         if(menuEntry137!=null){menuEntry137.destroy();menuEntry137=null;}
         if(voice133!=null)voice133.destroy();
-        if(onlineNamePrompt!=null)onlineNamePrompt.dismiss();
         if(online!=null)online.destroy();
         if (inputManager != null) inputManager.unregisterInputDeviceListener(padListener);
         hudHandler.removeCallbacksAndMessages(null); fpsView = null;

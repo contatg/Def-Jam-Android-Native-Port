@@ -674,6 +674,7 @@ final class UiText {
     }
     static boolean isPortuguese() { return "pt-BR".equals(language); }
     static boolean isSpanish() { return "es".equals(language); }
+    static String tr(String en, String pt, String es) { return isPortuguese() ? pt : isSpanish() ? es : en; }
     static int languageIndex() { return isPortuguese() ? 1 : isSpanish() ? 2 : 0; }
     static String languageCode(int index) { return index == 1 ? "pt-BR" : index == 2 ? "es" : "en"; }
     static String t(String text) {

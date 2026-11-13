@@ -10,6 +10,8 @@ Project: https://github.com/contatg/Def-Jam-Android-Native-Port
 
 The Android transport preparation in `src/hooks/ffny_android_protocol.h` is derived from [FFNY Online build 78](https://github.com/sweeax-exe/ffny-online/releases/tag/v0.13.0-remaster.78) and carries the upstream GPL-3.0-or-later notice. The existing private relay is based on the earlier MIT implementation. The build-78 transport is linked into the native game client, whose combined distribution is under GPL-3.0-or-later.
 
+The Android simulation uses the deterministic math sources from [FFNY Online build 80](https://github.com/sweeax-exe/ffny-online/tree/v0.13.0-remaster.80/src/detmath). The copied sources preserve their MIT and fdlibm notices.
+
 ## Recompilation and runtime
 
 Original static recompilation project: Vlad Yanhursky and contributors,

@@ -3,7 +3,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 /** The PC service hashes the 64 ASCII hex characters, not the original 32 random bytes. */
 final class AccountProtocol133 {
- static final String USER_AGENT = "FFNY-Online-Android/78";
+ static String userAgent(long build) { return "FFNY-Online-Android/" + build; }
  static byte[] hashInstallId(byte[] seed) throws Exception {
   if (seed.length != 32) throw new IllegalArgumentException("Install ID seed length");
   return java.util.Arrays.copyOf(MessageDigest.getInstance("SHA-256").digest(seed), 16);

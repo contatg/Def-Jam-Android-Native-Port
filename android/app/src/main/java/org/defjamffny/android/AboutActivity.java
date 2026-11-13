@@ -111,7 +111,7 @@ public final class AboutActivity extends Activity {
     private void renderUpdates() {
         LinearLayout status=card();status.addView(text("GITHUB RELEASES",10,PortUi.GOLD,true));
         String heading="Build information unavailable".equals(message)
-                ? ZeroTier148.tr("Version unavailable","Versão indisponível","Versión no disponible") : message;
+                ? UiText.tr("Version unavailable","Versão indisponível","Versión no disponible") : message;
         add(status,text(checking?"Checking for updates…":heading,21,
                 "Update available".equals(message)?PortUi.GREEN:PortUi.TEXT,true),8);
         add(status,text(UiText.t("Installed version")+": "+version+"  •  "+UiText.t("Build")+" "+code,12,PortUi.MUTED,false),10);
@@ -126,7 +126,7 @@ public final class AboutActivity extends Activity {
             if(release.buildCode>0)add(detail,text(UiText.t("Build")+" "+release.buildCode,12,PortUi.MUTED,false),8);
             add(detail,text(UiText.t("Published")+": "+release.published.substring(0,Math.min(10,release.published.length())),12,PortUi.MUTED,false),8);
             if("Update available".equals(message))action(detail,"Download APK",true,()->open(release.apk));
-            if("Build information unavailable".equals(message))add(detail,text(ZeroTier148.tr("This release has no comparable version tag. Open GitHub to review it.",
+            if("Build information unavailable".equals(message))add(detail,text(UiText.tr("This release has no comparable version tag. Open GitHub to review it.",
                     "Esta release não tem uma tag de versão comparável. Confira no GitHub.",
                     "Esta publicación no tiene una etiqueta de versión comparable. Revísala en GitHub."),13,PortUi.MUTED,false),12);
             action(detail,"View release",false,()->open(release.page));

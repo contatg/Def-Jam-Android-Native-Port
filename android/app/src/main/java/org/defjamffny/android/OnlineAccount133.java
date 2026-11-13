@@ -74,7 +74,6 @@ final class OnlineAccount133 {
     }
     private static void publish(){if(bound)nativeState(state,gameName(),reason);}
     static String gameName(){return state==3?gameName(name,username):"";}
-    static boolean isSigningIn(){return state==2;}
     static String gameName(String display,String user){
         String s=Normalizer.normalize(display,Normalizer.Form.NFD).replaceAll("\\p{M}","").replaceAll("[^A-Za-z0-9 _.-]","").trim();
         if(s.isEmpty())s=user.replaceAll("[^A-Za-z0-9 _.-]","").trim();
@@ -122,14 +121,12 @@ final class OnlineAccount133 {
         long deadline=SystemClock.elapsedRealtime()+left;IO.schedule(()->poll(gen,secret,deadline,0),1,TimeUnit.SECONDS);return true;
     }
     private static final class Reply{final int code;final String body;Reply(int c,String b){code=c;body=b;}}
-    private static boolean serviceDisabled148(){return true;}
     private static Reply request(String method,String path,String bearer,String body)throws Exception{
-        if(serviceDisabled148())throw new IOException("Community account service disabled; use your own server");
         if(Looper.myLooper()==Looper.getMainLooper())throw new IllegalStateException("Network on UI thread");
         if(!path.startsWith("/")||path.contains("\r")||path.contains("\n"))throw new IOException("path");
         HttpsURLConnection c=(HttpsURLConnection)new URL(BASE+path).openConnection();
         c.setInstanceFollowRedirects(false);c.setConnectTimeout(7000);c.setReadTimeout(10000);c.setRequestMethod(method);
-        c.setRequestProperty("Accept","application/json, text/plain");c.setRequestProperty("User-Agent",AccountProtocol133.USER_AGENT);
+        c.setRequestProperty("Accept","application/json, text/plain");c.setRequestProperty("User-Agent",AccountProtocol133.userAgent(app.getPackageManager().getPackageInfo(app.getPackageName(), 0).getLongVersionCode()));
         if(!bearer.isEmpty()){if(!hex(bearer,64))throw new IOException("token");c.setRequestProperty("Authorization","Bearer "+bearer);}
         try{
             if(body!=null){byte[] b=body.getBytes(StandardCharsets.UTF_8);c.setDoOutput(true);c.setRequestProperty("Content-Type","application/json");c.setFixedLengthStreamingMode(b.length);try(OutputStream o=c.getOutputStream()){o.write(b);}}
@@ -137,6 +134,20 @@ final class OnlineAccount133 {
             if(in!=null)try(InputStream i=in){byte[] b=new byte[2048];int n;while((n=i.read(b))!=-1){if(out.size()+n>65536)throw new IOException("response limit");out.write(b,0,n);}}
             return new Reply(code,out.toString("UTF-8"));
         }finally{c.disconnect();}
+    }
+    private static String accountFailure(Reply reply) {
+        if (reply.code == 403) {
+            String error = reply.body;
+            try { error = new JSONObject(reply.body).optString("error", error); }
+            catch (org.json.JSONException ignored) { }
+            String lower = error.toLowerCase(java.util.Locale.ROOT);
+            if (lower.contains("update"))
+                return tr("Update the Android app to sign in.", "Atualize o app Android para entrar.", "Actualiza la app Android para iniciar sesión.");
+            return tr("FFNY Online has not enabled Android sign-in for this build.",
+                "O FFNY Online ainda não liberou o login Android para esta compilação.",
+                "FFNY Online aún no ha habilitado el acceso Android para esta compilación.");
+        }
+        return tr("Account service unavailable.", "Serviço de conta indisponível.", "Servicio de cuenta no disponible.");
     }
     static void refresh(){
         if(app==null||state==2)return;final int gen=GENERATION.get();
@@ -148,7 +159,7 @@ final class OnlineAccount133 {
             synchronized(OnlineAccount133.class){if(gen!=GENERATION.get())return;
                 if(r.code==200){JSONObject a=new JSONObject(r.body);token=t;name=a.optString("name");username=a.optString("username");state=3;reason="";}
                 else if(r.code==401){file().delete();token=name=username="";state=0;reason=tr("Sign in again.","Entre novamente.","Inicia sesión de nuevo.");}
-                else{state=4;reason=tr("Account service unavailable.","Serviço de conta indisponível.","Servicio de cuenta no disponible.");}
+                else{state=4;reason=accountFailure(r);}
                 publish();}
         }catch(Exception e){if(gen==GENERATION.get()){state=4;reason=tr("Could not check the account.","Não foi possível verificar a conta.","No se pudo verificar la cuenta.");publish();}}});
     }
@@ -187,6 +198,7 @@ final class OnlineAccount133 {
                 if(gen!=GENERATION.get()||!samePending(secret))return;
                 if(r.code==200){JSONObject j=new JSONObject(r.body),account=j.getJSONObject("account");String t=j.getString("token");if(!hex(t,64))throw new IOException("token");
                     synchronized(OnlineAccount133.class){if(gen!=GENERATION.get()||!samePending(secret))return;save(t);clearPending(secret);token=t;name=account.optString("name");username=account.optString("username");state=3;reason="";publish();}return;}
+                if(r.code==403){clearPending(secret);state=4;reason=accountFailure(r);publish();return;}
                 if(r.code==410||(r.code==404&&SystemClock.elapsedRealtime()>deadline-570000)){clearPending(secret);state=4;reason=tr("Sign-in expired or cancelled.","Login expirou ou foi cancelado.","El inicio caducó o se canceló.");publish();return;}
                 misses=r.code==202?0:misses+1;
             }
@@ -205,11 +217,7 @@ final class OnlineAccount133 {
         GENERATION.incrementAndGet();file().delete();token=name=username="";state=0;
         reason=tr("Sign in again.","Entre novamente.","Inicia sesión de nuevo.");publish();
     }
-    // Called by the native account adapter on its networking worker, never the guest/UI.
-    static String rankedTicket(){
-        String t=token;if(state!=3||t.isEmpty()||Looper.myLooper()==Looper.getMainLooper())return "";
-        try{Reply r=request("POST","/api/ranked/ticket?format=text",t,null);if(r.code==401)expired(t);String ticket=r.body.trim();if(r.code==200&&hex(ticket,32))return ticket;}catch(Exception ignored){}return "";
-    }
+    static String rankedTicket() { return ""; }
     // Accessed by the native network worker and the match-report executor in :game.
     static synchronized byte[] deviceId() throws Exception {
         if (installDeviceId != null) return installDeviceId.clone();
@@ -241,7 +249,7 @@ final class OnlineAccount133 {
     }
 
     static void reportMatch(String json) {
-        if (serviceDisabled148() || state != 3 || json == null || json.length() > 16384) return;
+        if (state != 3 || json == null || json.length() > 16384) return;
         final String currentToken = token;
         IO.execute(() -> {
             try {
@@ -254,12 +262,10 @@ final class OnlineAccount133 {
             } catch (Exception ignored) { }
         });
     }
-    static void showRegion(Activity a){ZeroTier148.show(a,null);}
-    static void enter(Activity a,Runnable accepted){ZeroTier148.enter(a,accepted);}
-    static void show(Activity a){ZeroTier148.show(a,null);}
-    static void show(Activity a,Runnable after){ZeroTier148.show(a,after);}
+    static void enter(Activity a, Runnable accepted) { show(a, accepted, true); }
+    static void show(Activity a) { show(a, null, false); }
     private static void show(Activity a,Runnable after,boolean entering){
-        AlertDialog prior=entryDialog.get();if(entering&&prior!=null&&prior.isShowing())return;
+        AlertDialog prior=entryDialog.get();if(prior!=null&&prior.isShowing())return;
         init(a,a instanceof DefJamActivity);refresh();
         LinearLayout body=new LinearLayout(a);body.setOrientation(LinearLayout.VERTICAL);int pad=PortUi.dp(a,18);body.setPadding(pad,pad,pad,pad);
         body.setBackground(PortUi.shape(a,0xff111010,0xff594327,18));
@@ -275,9 +281,9 @@ final class OnlineAccount133 {
                 final String t=token;if(t.isEmpty())return;
                 IO.execute(()->{try{Reply reply=request("DELETE","/api/me",t,null);if(reply.code==204||reply.code==200||reply.code==401)expired(t);else{reason=tr("Could not delete the account.","Não foi possível excluir a conta.","No se pudo eliminar la cuenta.");publish();}}catch(Exception error){reason=tr("Account service unavailable.","Serviço de conta indisponível.","Servicio de cuenta no disponible.");publish();}});
             }).show());
-        Button scores=PortUi.button(a,tr("My stats / Leaderboard","Estatísticas / Ranking","Estadísticas / Clasificación"),false);body.addView(scores);
+        Button scores=PortUi.button(a,tr("My stats","Minhas estatísticas","Mis estadísticas"),false);body.addView(scores);
         TextView scoreText=PortUi.text(a,"",12,PortUi.MUTED,false);body.addView(scoreText);
-        scores.setOnClickListener(v->IO.execute(()->{try{String t=token;Reply mine=t.isEmpty()?new Reply(200,""):request("GET","/api/me/stats?format=text&page=0",t,null);Reply board=request("GET","/api/leaderboard?format=text&page=0","",null);stats=(mine.code==200?mine.body:"")+"\n"+(board.code==200?board.body:"");UI.post(()->scoreText.setText(stats));}catch(Exception e){UI.post(()->scoreText.setText(tr("Service unavailable","Serviço indisponível","Servicio no disponible")));}}));
+        scores.setOnClickListener(v->IO.execute(()->{try{String t=token;Reply mine=t.isEmpty()?new Reply(200,""):request("GET","/api/me/stats?format=text&page=0",t,null);stats=mine.code==200?mine.body:accountFailure(mine);UI.post(()->scoreText.setText(stats));}catch(Exception e){UI.post(()->scoreText.setText(tr("Service unavailable","Serviço indisponível","Servicio no disponible")));}}));
         Button privacy=PortUi.button(a,tr("Privacy","Privacidade","Privacidad"),false);body.addView(privacy);privacy.setOnClickListener(v->{if(a instanceof DefJamActivity&&DefJamActivity.nativeOnlineSession()){
             android.widget.Toast.makeText(a,tr("Leave online before opening the browser.","Saia do online antes de abrir o navegador.","Sal del online antes de abrir el navegador."),android.widget.Toast.LENGTH_LONG).show();return;}
             a.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(BASE+"/privacy")));});
@@ -292,15 +298,15 @@ final class OnlineAccount133 {
             cancel.setVisibility(state==2?android.view.View.VISIBLE:android.view.View.GONE);
             logout.setVisibility(state==3?android.view.View.VISIBLE:android.view.View.GONE);
             delete.setVisibility(!entering&&state==3?android.view.View.VISIBLE:android.view.View.GONE);
-            scores.setVisibility(entering?android.view.View.GONE:android.view.View.VISIBLE);
+            scores.setVisibility(!entering&&state==3?android.view.View.VISIBLE:android.view.View.GONE);
             privacy.setVisibility(entering?android.view.View.GONE:android.view.View.VISIBLE);
             if(entering&&state==3&&gameForeground){d.dismiss();return;}UI.postDelayed(this,300);}};
-        d.setOnDismissListener(v->{UI.removeCallbacks(tick);if(entering)entryDialog.clear();
+        d.setOnDismissListener(v->{UI.removeCallbacks(tick);entryDialog.clear();
             if(!a.isDestroyed()&&!a.isFinishing()){
                 if(a instanceof DefJamActivity)((DefJamActivity)a).restoreAfterOnline();
-                if(after!=null&&(!entering||state==3))after.run();
+                if(after!=null&&state==3&&gameForeground)after.run();
             }});
         d.setOnShowListener(v->{if(d.getWindow()!=null)d.getWindow().setBackgroundDrawable(PortUi.shape(a,0xff111010,0xff594327,18));d.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(PortUi.GOLD);});
-        if(entering)entryDialog=new java.lang.ref.WeakReference<>(d);d.show();UI.post(tick);
+        entryDialog=new java.lang.ref.WeakReference<>(d);d.show();UI.post(tick);
     }
 }

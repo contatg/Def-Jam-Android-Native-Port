@@ -1,7 +1,6 @@
 package org.defjamffny.android;
 
 import android.app.Dialog;
-import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.*;
@@ -28,12 +27,12 @@ final class OnlinePanel {
     private volatile int generation;
     private volatile boolean destroyed;
     private Dialog dialog;
-    private LinearLayout root,rooms,players,votes,advanced,createSecret,joinSecret;
+    private LinearLayout root,rooms,players,votes,createSecret,joinSecret;
     private FrameLayout content;
     private final View[] pages=new View[7];
     private TextView stage,status,badge,roomCode,empty,privateHint;
-    private EditText name,server,code,roomName,createPass,joinPass;
-    private CheckBox privateRoom,protectedJoin,customServer;
+    private EditText code,roomName,createPass,joinPass;
+    private CheckBox privateRoom,protectedJoin;
     private Spinner fighter;
     private Button connect,create,quick,join,refresh,ready,back,disconnect;
     private ProgressBar progress;
@@ -126,19 +125,17 @@ final class OnlinePanel {
         root.requestFocus();setPage(0);refreshActions();command(9,"","",1);poll.run();
     }
     private void buildPages(){
-        SharedPreferences prefs=activity.getSharedPreferences("online",0);
-        LinearLayout profile=card("ZeroTier / Online");caption(profile,"ZeroTier / Online");
-        name=new EditText(activity);name.setVisibility(View.GONE); // legacy member; never shown or used for identity
-        connect=action(profile,"ZeroTier / Online",true,()->OnlineAccount133.enter(activity,()->{
-            String host=OnlineMenuState.endpoint(customServer.isChecked(),server.getText().toString(),prefs.getString("relay_region133","eu"));
-            String player=ZeroTier148.name(activity);if(!OnlineMenuState.validServer(host)||!OnlineMenuState.validName(player))return;
-            prefs.edit().putString("server",server.getText().toString().trim()).putBoolean("custom_relay_enabled114",customServer.isChecked()).apply();
-            passwordRooms=!OnlineMenuState.communityServer(host);roomOptions();used=true;keyboard();command(0,host,player,0);
-        }));
-        LinearLayout options=card("ZeroTier / Own server");caption(options,"Connect to your own room server over ZeroTier.");caption(options,OnlineMenuState.endpoint(false,"",prefs.getString("relay_region133","eu")));
-        action(options,"Server settings",false,()->advanced.setVisibility(advanced.getVisibility()==View.VISIBLE?View.GONE:View.VISIBLE));advanced=column();
-        customServer=new CheckBox(activity);customServer.setText(t("Use my own server"));customServer.setTextColor(PortUi.TEXT);customServer.setMinimumHeight(dp(48));customServer.setChecked(prefs.getBoolean("custom_relay_enabled114",false));add(advanced,customServer);
-        String saved=prefs.getString("server","");server=field(advanced,"Relay server",saved,120,false);server.setHint("server.example:27777");server.setEnabled(customServer.isChecked());customServer.setOnCheckedChangeListener((b,on)->{server.setEnabled(on&&!used&&!pending.get());});caption(advanced,"Password rooms require the compatible own server from the patch.");add(options,advanced);advanced.setVisibility(View.GONE);caption(options,"Online • experimental");caption(options,"The selected relay receives your IP address and player name. No game files are sent.");pages[0]=columns(profile,options);
+        LinearLayout profile = card("FFNY Online");
+        connect = action(profile, UiText.tr("Sign in with Discord", "Entrar com Discord", "Entrar con Discord"),
+            true, () -> OnlineAccount133.enter(activity, () -> {
+                if (dialog == null) return;
+                String player = OnlineAccount133.gameName();
+                if (!OnlineMenuState.validName(player)) return;
+                used = true;
+                keyboard();
+                command(0, OnlineMenuState.DEFAULT_SERVER, player, 0);
+            }));
+        pages[0] = scroll(profile);
         LinearLayout actions=card("Play with friends");create=action(actions,"Create room",true,()->{form=5;setPage(5);});action(actions,"Join by code",false,()->{form=6;setPage(6);});quick=action(actions,"Quick match • 1 vs 1",false,()->command(2,"","",0));
         LinearLayout available=card("Public rooms");refresh=action(available,"Refresh rooms",false,()->command(1,"","",0));empty=text("No public rooms yet. Create one or join by code.",13,PortUi.MUTED,false);add(available,empty);rooms=column();add(available,rooms);pages[1]=columns(actions,available);
         LinearLayout room=card("Your room");roomCode=text("",26,PortUi.GOLD,true);add(room,roomCode);privateHint=text("",12,PortUi.MUTED,false);add(room,privateHint);players=column();add(room,players);caption(room,"Share this code with your friend. Both players must be ready.");
@@ -166,7 +163,7 @@ final class OnlinePanel {
     private void setText(TextView v,String s){if(!s.contentEquals(v.getText()))v.setText(s);}
     private void refreshActions(){
         if(dialog==null)return;boolean linked=OnlineMenuState.linked(state)&&used,busy=pending.get();
-        connect.setEnabled(menuReady&&!busy&&(state==5||(state==0&&!used)));name.setEnabled(!used&&!busy);customServer.setEnabled(!used&&!busy);server.setEnabled(!used&&!busy&&customServer.isChecked());
+        connect.setEnabled(menuReady&&!busy&&(state==5||(state==0&&!used)));
         create.setEnabled(linked&&!inRoom&&!busy);quick.setEnabled(create.isEnabled());refresh.setEnabled(create.isEnabled());join.setEnabled(create.isEnabled());
         ready.setEnabled(linked&&inRoom&&phase==0&&roster.length()>0&&!busy);fighter.setEnabled(ready.isEnabled()&&!localReady);ready.setText(t(localReady?"Ready • tap to cancel":"Ready to fight"));
         for(int i=0;i<rooms.getChildCount();i++){View row=rooms.getChildAt(i);row.setEnabled(create.isEnabled()&&Boolean.TRUE.equals(row.getTag()));}for(int i=0;i<votes.getChildCount();i++)votes.getChildAt(i).setEnabled(linked&&inRoom&&phase==1&&!busy);
