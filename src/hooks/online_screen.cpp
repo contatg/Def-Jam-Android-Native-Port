@@ -1616,14 +1616,6 @@ bool draw(ImVec2 display)
         char status[256];
         netplay_status(status, sizeof(status));
         page_title(dl, f, "ONLINE");
-        if (!strcmp(status, NETPLAY_PARTNER_BUILD_REQUIRED)) {
-            text(dl, f, g_hand, 20, 54, 110, RED, "Build incompatible", LEFT, 1.0f);
-            text(dl, f, g_title, 14, 54, 145, WHITE, status, LEFT, 0.8f, 265);
-            door_text(dl, f, &tex("ui/online_icon.png"), "OFFLINE", "UPDATE REQUIRED",
-                      "Install a compatible Android build to play on FFNY Online.");
-            hint(dl, f, 54, 392, "b", "BACK");
-            return !pad.b;
-        }
         text(dl, f, g_hand, 20, 54, 110, RED, "No connection", LEFT, 1.0f);
         text(dl, f, g_title, 14, 54, 145, WHITE, status, LEFT, 0.8f, 265);
         door_text(dl, f, &tex("ui/online_icon.png"), "OFFLINE", "NO CONNECTION",

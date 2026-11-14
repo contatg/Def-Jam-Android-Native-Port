@@ -12,6 +12,7 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.AtomicFile;
 import android.util.Base64;
+import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Button;
@@ -126,11 +127,15 @@ final class OnlineAccount133 {
         if(!path.startsWith("/")||path.contains("\r")||path.contains("\n"))throw new IOException("path");
         HttpsURLConnection c=(HttpsURLConnection)new URL(BASE+path).openConnection();
         c.setInstanceFollowRedirects(false);c.setConnectTimeout(7000);c.setReadTimeout(10000);c.setRequestMethod(method);
-        c.setRequestProperty("Accept","application/json, text/plain");c.setRequestProperty("User-Agent",AccountProtocol133.userAgent(app.getPackageManager().getPackageInfo(app.getPackageName(), 0).getLongVersionCode()));
+        long build = app.getPackageManager().getPackageInfo(app.getPackageName(), 0).getLongVersionCode();
+        c.setRequestProperty("Accept", "application/json, text/plain");
+        c.setRequestProperty("User-Agent", AccountProtocol133.userAgent(build));
         if(!bearer.isEmpty()){if(!hex(bearer,64))throw new IOException("token");c.setRequestProperty("Authorization","Bearer "+bearer);}
         try{
             if(body!=null){byte[] b=body.getBytes(StandardCharsets.UTF_8);c.setDoOutput(true);c.setRequestProperty("Content-Type","application/json");c.setFixedLengthStreamingMode(b.length);try(OutputStream o=c.getOutputStream()){o.write(b);}}
-            int code=c.getResponseCode();InputStream in=code>=400?c.getErrorStream():c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream();
+            int code=c.getResponseCode();
+            if (code >= 400) Log.w("FFNYAccount", method + " " + path + " returned " + code + " (build " + build + ")");
+            InputStream in=code>=400?c.getErrorStream():c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream();
             if(in!=null)try(InputStream i=in){byte[] b=new byte[2048];int n;while((n=i.read(b))!=-1){if(out.size()+n>65536)throw new IOException("response limit");out.write(b,0,n);}}
             return new Reply(code,out.toString("UTF-8"));
         }finally{c.disconnect();}
@@ -143,9 +148,9 @@ final class OnlineAccount133 {
             String lower = error.toLowerCase(java.util.Locale.ROOT);
             if (lower.contains("update"))
                 return tr("Update the Android app to sign in.", "Atualize o app Android para entrar.", "Actualiza la app Android para iniciar sesión.");
-            return tr("FFNY Online has not enabled Android sign-in for this build.",
-                "O FFNY Online ainda não liberou o login Android para esta compilação.",
-                "FFNY Online aún no ha habilitado el acceso Android para esta compilación.");
+            return tr("FFNY Online refused Android sign-in (HTTP 403).",
+                "O FFNY Online recusou o login no Android (HTTP 403).",
+                "FFNY Online rechazó el acceso en Android (HTTP 403).");
         }
         return tr("Account service unavailable.", "Serviço de conta indisponível.", "Servicio de cuenta no disponible.");
     }

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (c) 2026 sweeax-exe (FFNY Online)
  * Packet layout from the Android client specification. The fingerprint
- * follows FFNY Online v0.13.0-remaster.81 (928b57e4).
+ * follows the FFNY Online Android specification.
  */
 #ifndef DEFJAM_FFNY_ANDROID_PROTOCOL_H
 #define DEFJAM_FFNY_ANDROID_PROTOCOL_H
@@ -9,9 +9,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#define FFNY_ANDROID_PROTOCOL_BUILD 81u
-#define FFNY_ANDROID_PROTOCOL_VERSION "0.13.0"
-#define FFNY_ANDROID_LOCKSTEP_RULES 5u
+#ifndef FFNY_ANDROID_BUILD_NUMBER
+#error Define FFNY_ANDROID_BUILD_NUMBER to the Android APK versionCode
+#endif
+#define FFNY_ANDROID_PROTOCOL_VERSION "android-1.5"
+#define FFNY_ANDROID_LOCKSTEP_RULES 4u
 #define FFNY_ANDROID_PLATFORM 1u
 #define FFNY_ANDROID_CAPS 0u
 #define FFNY_ANDROID_NAME_BYTES 24u
@@ -35,7 +37,7 @@ static inline void ffny_android_fingerprint(uint8_t out[8], uint32_t content)
     for (const char *v = FFNY_ANDROID_PROTOCOL_VERSION; *v; ++v)
         h1 = (h1 ^ (uint8_t)*v) * 16777619u;
     for (unsigned i = 0; i < 4; ++i)
-        h1 = (h1 ^ (uint8_t)(FFNY_ANDROID_PROTOCOL_BUILD >> (8 * i))) * 16777619u;
+        h1 = (h1 ^ (uint8_t)((uint32_t)FFNY_ANDROID_BUILD_NUMBER >> (8 * i))) * 16777619u;
     uint32_t h2 = ffny_android_mix(h1 ^ FFNY_ANDROID_LOCKSTEP_RULES);
     if (content) {
         h1 = ffny_android_mix(h1 ^ content);
@@ -48,7 +50,7 @@ static inline void ffny_android_fingerprint(uint8_t out[8], uint32_t content)
 /* Append to the PC HELLO, immediately after the name. */
 static inline void ffny_android_hello_suffix(uint8_t out[9], uint32_t content)
 {
-    ffny_android_put32(out, FFNY_ANDROID_PROTOCOL_BUILD);
+    ffny_android_put32(out, FFNY_ANDROID_BUILD_NUMBER);
     ffny_android_put32(out + 4, content);
     out[8] = FFNY_ANDROID_PLATFORM;
 }

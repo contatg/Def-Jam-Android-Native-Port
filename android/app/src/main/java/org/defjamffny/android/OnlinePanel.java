@@ -126,6 +126,15 @@ final class OnlinePanel {
     }
     private void buildPages(){
         LinearLayout profile = card("FFNY Online");
+        caption(profile, UiText.tr("Server region", "Região do servidor", "Región del servidor"));
+        Spinner region = new Spinner(activity);
+        String[] relays = {OnlineMenuState.DEFAULT_SERVER, OnlineMenuState.NA_SERVER, OnlineMenuState.WEST_SERVER};
+        ArrayAdapter<String> regions = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_item,
+                new String[] {"EU", "NA West", "US West"});
+        regions.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        region.setAdapter(regions);
+        region.setMinimumHeight(dp(48));
+        add(profile, region);
         connect = action(profile, UiText.tr("Sign in with Discord", "Entrar com Discord", "Entrar con Discord"),
             true, () -> OnlineAccount133.enter(activity, () -> {
                 if (dialog == null) return;
@@ -133,7 +142,7 @@ final class OnlinePanel {
                 if (!OnlineMenuState.validName(player)) return;
                 used = true;
                 keyboard();
-                command(0, OnlineMenuState.DEFAULT_SERVER, player, 0);
+                command(0, relays[region.getSelectedItemPosition()], player, 0);
             }));
         pages[0] = scroll(profile);
         LinearLayout actions=card("Play with friends");create=action(actions,"Create room",true,()->{form=5;setPage(5);});action(actions,"Join by code",false,()->{form=6;setPage(6);});quick=action(actions,"Quick match • 1 vs 1",false,()->command(2,"","",0));

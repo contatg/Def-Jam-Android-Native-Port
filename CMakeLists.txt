@@ -179,6 +179,11 @@ if(DEFJAM_BUILD_GAME)
     endif()
     target_compile_features(${DEFJAM_GAME_TARGET} PRIVATE cxx_std_17)
     if(ANDROID)
+        if(NOT FFNY_ANDROID_BUILD_NUMBER MATCHES "^[1-9][0-9]*$")
+            message(FATAL_ERROR "Pass the Android APK versionCode as FFNY_ANDROID_BUILD_NUMBER.")
+        endif()
+        target_compile_definitions(${DEFJAM_GAME_TARGET} PRIVATE
+            FFNY_ANDROID_BUILD_NUMBER=${FFNY_ANDROID_BUILD_NUMBER})
         # FFNY Online build 80: route the lifted game's transcendentals through
         # the same implementation as the desktop client.
         target_sources(${DEFJAM_GAME_TARGET} PRIVATE

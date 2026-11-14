@@ -164,8 +164,7 @@ void netplay_crowd_update(void) { sub_00081170(); }
 #define T_PLAYERS     0x1D
 #define T_RANKED      0x1E      /* the ranked queue (relays since build 15) */
 #define T_QUEUE       0x1F
-/* FFNY partner transport preparation. The Android relay remains disabled
- * until the full tagged game/client migration and a joint test are ready. */
+/* Official lobby packets. The custom relay uses 0x20/0x21 for private rooms. */
 #define T_DEVICE_ID 0x30
 #define T_CAPS132     0x20
 #define CAPS_ROLLBACK132 2u
@@ -1066,7 +1065,7 @@ static void on_start(const uint8_t *b, int len)
     N.reported = N.fighting_seen = 0;
     LeaveCriticalSection(&g_cs);
     reset_remote_pads();
-    fprintf(stderr, "[NETPLAY] START: seed %08X, type %d, rules %d, venue %d, %d players, this PC is player %d\n",
+    fprintf(stderr, "[NETPLAY] START: seed %08X, type %d, rules %d, venue %d, %d players, local slot %d\n",
             seed, m.type, m.rules, m.venue, count, pos + 1);
     become_connected();
     automatch_request(&m);
@@ -1484,8 +1483,8 @@ static int project_server_endpoint(const char *server)
 
 static int netplay_relay_allows_rollback132(void)
 {
-    LONG caps = np_load(&N.relay_caps132);
-    return !project_server_endpoint(N.server_text) || (caps >= 0 && (caps & CAPS_ROLLBACK132));
+    /* The public relay preview only implements the standard lockstep rooms. */
+    return !project_server_endpoint(N.server_text);
 }
 
 static int resolve(const char *server)
@@ -1508,7 +1507,7 @@ static int resolve(const char *server)
     char address[INET_ADDRSTRLEN];
     const struct sockaddr_in *ipv4 = (const struct sockaddr_in *)res->ai_addr;
     if (!inet_ntop(AF_INET, &ipv4->sin_addr, address, sizeof(address)) ||
-        project_server_endpoint(address)) {
+        (!project_server_endpoint(server) && project_server_endpoint(address))) {
         freeaddrinfo(res);
         return -1;
     }
@@ -1532,9 +1531,9 @@ static int start(const char *server, const char *name, int creating, const char 
     InitOnceExecuteOnce(&g_once, init_once, NULL, NULL);
     netplay_stop();
     if (!server || !*server) { InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("Enter the server address first."); return -1; }
-    if (project_server_endpoint(server)) {
+    if (!lobby && project_server_endpoint(server)) {
         InterlockedExchange(&N.state, NETPLAY_FAILED);
-        set_status(NETPLAY_PARTNER_BUILD_REQUIRED);
+        set_status("Join the FFNY Online lobby to use a room code.");
         return -1;
     }
     if (netplay_retry_blocked132(server)) return -1;
@@ -1598,7 +1597,9 @@ static int start(const char *server, const char *name, int creating, const char 
         closesocket(N.sock); N.sock = INVALID_SOCKET;
         InterlockedExchange(&N.state, NETPLAY_FAILED); set_status("Cannot reach this relay."); return -1;
     }
-    fprintf(stderr, "[NETPLAY] Android ARM64, private relay protocol\n");
+    if (project_server_endpoint(N.server_text))
+        fprintf(stderr, "[NETPLAY] FFNY Online Android build=%u platform=%u caps=0x%08X\n",
+                (unsigned)FFNY_ANDROID_BUILD_NUMBER, FFNY_ANDROID_PLATFORM, FFNY_ANDROID_CAPS);
 #endif
     InterlockedExchange(&N.stop,0);
     if(np_load(&s_mobile_cancel)!=cancel_generation){closesocket(N.sock);N.sock=INVALID_SOCKET;return -1;}
@@ -1789,6 +1790,7 @@ void netplay_lobby_ranked(int fighter)
 {
     HANDLE h;
     if (!N.lobby || !N.have_token) return;
+    if (project_server_endpoint(N.server_text)) return;
     EnterCriticalSection(&g_cs);
     if (N.queue_state != NETQUEUE_NONE && N.queue_state != NETQUEUE_REFUSED) {
         LeaveCriticalSection(&g_cs);
