@@ -12,7 +12,7 @@ This is the source snapshot for the Android 1.4 port, including the touch Specia
 
 Use the [Android build guide](android/README.md) with a verified original Xbox USA dump, JDK 17, Gradle 8.7, Android SDK 34 and the NDK/CMake versions in [build.gradle](android/app/build.gradle). The [dependency preparation script](android/Preparar-Dependencias-Android.ps1) and [recompiler scripts](scripts/) set up the local inputs. The first Gradle setup may need network access to populate its dependency cache before the offline build script runs.
 
-Generate the lifted C/H files locally from your disc. Game data, generated game code, signing keys, build outputs and the Lossless Scaling DLL or its extracted shaders are excluded. This tree uses a generic launcher icon. LSFG requires the user's own compatible Lossless Scaling DLL.
+Generate the lifted C/H files locally from your disc. Game data, generated game code, signing keys, build outputs and the Lossless Scaling DLL or its extracted shaders are excluded. The Android launcher uses the Def Jam icon from v1.4. LSFG requires the user's own compatible Lossless Scaling DLL.
 
 The source includes changes made after the release APK was built. A clean Android build and device test from this publication are still pending.
 
