@@ -19,7 +19,7 @@ The source includes changes made after the release APK was built. A clean Androi
 
 ## FFNY Online Android development
 
-Android 1.5 uses the Android 1.4 game hooks and borrows memory-layout and wire-format changes from [upstream build 81](https://github.com/sweeax-exe/ffny-online/releases/tag/v0.13.0-remaster.81). Build 150 uses its own build number in the account User-Agent and the Android lobby HELLO. The official relay integration supports standard Android-to-Android lockstep rooms. Ranked and PC cross-play are disabled.
+Android 1.5 uses the Android 1.4 game hooks and borrows memory-layout and wire-format changes from [upstream build 81](https://github.com/sweeax-exe/ffny-online/releases/tag/v0.13.0-remaster.81). The APK build number is used in the account User-Agent and the Android lobby HELLO. The official relay integration supports standard Android-to-Android lockstep rooms. Ranked and PC cross-play are disabled.
 
 Android now compiles the deterministic math sources from [build 80](https://github.com/sweeax-exe/ffny-online/tree/v0.13.0-remaster.80/src/detmath) and checks the guest thread's floating-point mode at each simulation step. The upstream vector test produced 55 matching hashes on x86-64 and emulated ARM64 (1,000,000 inputs per set). This tests math functions only. Gameplay checksum parity is pending.
 
@@ -28,7 +28,7 @@ Android now compiles the deterministic math sources from [build 80](https://gith
 
 - The ARM64 test APK includes experimental rollback with runtime heap detection, a 192 MiB contiguous guest memory window, and 128 MiB reported guest RAM. It includes the Discord sign-in flow and the restored custom touch artwork. Execution is native, with hakuX and ZeroTier removed.
 - The development branch adds Android HELLO and CAPS fixtures, checksum messages, desync diagnostics, and peak RSS logging. The wire fixture passed locally and 55 deterministic-math result hashes matched the upstream implementation in a host test.
-- Build 150 restores the launcher artwork and uses compiled drawable IDs for the custom controls. The official lobby waits for the relay to acknowledge CAPS before sending room requests. It sends platform byte 1, the ANDR-salted fingerprint, and CAPS `0x00000000`. Account requests, including `/auth/poll`, use `FFNY-Online-Android/150`. Relay acceptance and Android-to-Android matches still need verification.
+- The v1.5 APK uses the original Android package ID and compiled drawable IDs for the custom fight controls. The official lobby waits for the relay to acknowledge CAPS before sending room requests. Build 138 sends platform byte 1, the ANDR-salted fingerprint, and CAPS `0x00000000`. Account requests, including `/auth/poll`, use `FFNY-Online-Android/138`. Relay acceptance and Android-to-Android matches still need verification.
 
 Before marking the preview as the current online build:
 

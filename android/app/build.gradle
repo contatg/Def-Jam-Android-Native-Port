@@ -3,7 +3,7 @@ plugins {
 }
 
 def vendor = file("../vendor")
-def androidBuildNumber = 150
+def androidBuildNumber = 138
 
 android {
     namespace "org.defjamffny.android"
