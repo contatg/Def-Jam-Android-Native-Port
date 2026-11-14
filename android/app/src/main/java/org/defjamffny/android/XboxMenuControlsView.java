@@ -1,6 +1,7 @@
 package org.defjamffny.android;
 
 import android.graphics.Canvas;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -25,6 +26,9 @@ public final class XboxMenuControlsView extends View {
     private final int[] directions={KeyEvent.KEYCODE_NUMPAD_8,KeyEvent.KEYCODE_NUMPAD_2,
             KeyEvent.KEYCODE_NUMPAD_4,KeyEvent.KEYCODE_NUMPAD_6};
     private final RectF[] boxes=new RectF[names.length];
+    private final Bitmap[] artwork = new Bitmap[names.length];
+    private final Bitmap[] arrows = new Bitmap[4];
+    private final Paint artworkPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Map<Integer,Set<Integer>> pointers=new HashMap<>();
     private final Set<Integer> held=new HashSet<>();
     private static final String[] ARROWS={"▲","▼","◀","▶"};
@@ -34,7 +38,14 @@ public final class XboxMenuControlsView extends View {
     public XboxMenuControlsView(DefJamActivity context){
         super(context);activity=context;setFocusable(false);settings=MenuTouchSettings.read(context);
         setContentDescription(UiText.t("Use A, B and the D-pad to navigate menus"));
-        for(int i=0;i<boxes.length;i++)boxes[i]=new RectF();
+        for (int i = 0; i < boxes.length; i++) {
+            boxes[i] = new RectF();
+            if (settings.customArtwork)
+                artwork[i] = VirtualControlsView.loadArtwork(context, MenuTouchSettings.artworkControl(settingsIndex[i]));
+        }
+        if (settings.customArtwork)
+            for (int i = 0; i < arrows.length; i++)
+                arrows[i] = VirtualControlsView.loadArtwork(context, VirtualControlsView.UP + i);
     }
     private float dp(float v){return v*getResources().getDisplayMetrics().density;}
     public void setOnlineMode(boolean value){
@@ -47,7 +58,7 @@ public final class XboxMenuControlsView extends View {
         for(int i=0;i<boxes.length;i++){
             int index=settingsIndex[i];
             float hw=radius*settings.size[index],hh=hw;
-            if(i>=4){hw*=1.1f;hh*=.65f;}
+            if(i>=4 && artwork[i] == null){hw*=1.1f;hh*=.65f;}
             float x=MenuTouchSettings.center(settings.x[index],w,hw);
             float y=MenuTouchSettings.center(settings.y[index],h,hh);
             boxes[i].set(x-hw,y-hh,x+hw,y+hh);
@@ -65,7 +76,14 @@ public final class XboxMenuControlsView extends View {
     @Override protected void onDraw(Canvas c){
         for(int i=0;i<count();i++){
             int index=settingsIndex[i];
-            RectF r=boxes[i];paint.setStyle(Paint.Style.FILL);paint.setColor(faded(Color.argb(180,16,18,22),settings.alpha[index]));
+            RectF r=boxes[i];
+            if (artwork[i] != null) {
+                artworkPaint.setAlpha(Math.round(255 * settings.alpha[index]));
+                c.drawBitmap(artwork[i], null, r, artworkPaint);
+                label(c,names[i],r.centerX(),r.bottom-dp(7),dp(12),faded(Color.WHITE,settings.alpha[index]));
+                continue;
+            }
+            paint.setStyle(Paint.Style.FILL);paint.setColor(faded(Color.argb(180,16,18,22),settings.alpha[index]));
             if(i<4)c.drawOval(r,paint);else c.drawRoundRect(r,dp(10),dp(10),paint);
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(2));paint.setColor(faded(ControllerGlyphs127.color(bindings[i],settings.playStation),settings.alpha[index]));
             if(i<4)c.drawOval(r,paint);else c.drawRoundRect(r,dp(10),dp(10),paint);
@@ -73,6 +91,11 @@ public final class XboxMenuControlsView extends View {
         }
         for(int i=0;i<4;i++){
             float half=dpad.cell*.48f;arrow.set(dpad.cx[i]-half,dpad.cy[i]-half,dpad.cx[i]+half,dpad.cy[i]+half);RectF r=arrow;
+            if (arrows[i] != null) {
+                artworkPaint.setAlpha(Math.round(255 * settings.alpha[MenuTouchSettings.DPAD]));
+                c.drawBitmap(arrows[i], null, r, artworkPaint);
+                continue;
+            }
             paint.setColor(faded(Color.argb(190,22,23,27),settings.alpha[2]));paint.setStyle(Paint.Style.FILL);c.drawRoundRect(r,dp(9),dp(9),paint);
             label(c,ARROWS[i],r.centerX(),r.centerY(),dpad.cell*.5f,faded(Color.rgb(230,174,67),settings.alpha[2]));
         }

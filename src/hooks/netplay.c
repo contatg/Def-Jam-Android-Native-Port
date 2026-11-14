@@ -168,6 +168,7 @@ void netplay_crowd_update(void) { sub_00081170(); }
 #define T_DEVICE_ID 0x30
 #define T_CAPS132     0x20
 #define CAPS_ROLLBACK132 2u
+#define CAPS_REPLY_GRACE_MS 2000
 #define TICKET_LEN    16        /* RANKED: the account service's one-time ticket */
 
 /* DATA payloads between the game copies (opaque to the relay) */
@@ -1087,6 +1088,8 @@ static void netplay_relay_error132(int code, const uint8_t *message, size_t mess
     int partner = project_server_endpoint(N.server_text);
     if (state == NETPLAY_FAILED || state == NETPLAY_OFF) return;
     EnterCriticalSection(&g_cs);
+    int negotiating_caps = partner && state == NETPLAY_CONNECTING && N.have_token;
+    char rejection[128];
     if (code == 7 && N.lobby && N.have_token && state != NETPLAY_CONNECTING) {
         /* Preserve reconnection after a relay restart. A refusal of that fresh
          * HELLO is terminal, so this cannot loop forever without a WELCOME. */
@@ -1114,10 +1117,14 @@ static void netplay_relay_error132(int code, const uint8_t *message, size_t mess
         static const char unsupported[] = "platform not supported";
         if (message_len == sizeof unsupported - 1 && !memcmp(message, unsupported, message_len))
             text = "This relay does not support the Android platform.";
-        else if (state == NETPLAY_CONNECTING)
+        else if (state == NETPLAY_CONNECTING && !negotiating_caps)
             text = "FFNY Online has not enabled Android on this relay yet.";
-        else
-            text = "FFNY Online has not accepted this Android build's capabilities.";
+        else {
+            snprintf(rejection, sizeof(rejection),
+                     "FFNY Online refused Android build %u (CAPS 0x%08X, error 14).",
+                     (unsigned)FFNY_ANDROID_BUILD_NUMBER, FFNY_ANDROID_CAPS);
+            text = rejection;
+        }
     }
     recoverable = N.lobby && N.have_token && state != NETPLAY_CONNECTING &&
         (code == 1 || code == 2 || code == 3 || code == 8 || code == 9 || private_password);
@@ -1151,8 +1158,11 @@ static void netplay_relay_error132(int code, const uint8_t *message, size_t mess
         set_status("%s", text);
     }
     fprintf(stderr, "[NETREJECT132] code=%d stage=%s action=%s retries_stopped=1 cooldown_ms=%d: %s\n",
-        code, state == NETPLAY_CONNECTING ? "hello" : "session", recoverable ? "room-error" : "failed",
+        code, negotiating_caps ? "caps" : state == NETPLAY_CONNECTING ? "hello" : "session", recoverable ? "room-error" : "failed",
         !recoverable && (code == 6 || code == 10) ? 60000 : 0, text);
+    if (partner && code == 14 && message_len)
+        fprintf(stderr, "[NETREJECT132] relay=%s reply=%.*s\n",
+                N.server_text, (int)message_len, (const char *)message);
 }
 
 static int netplay_retry_blocked132(const char *server)
@@ -1169,6 +1179,13 @@ static int netplay_retry_blocked132(const char *server)
     return 1;
 }
 
+static void enter_lobby(void)
+{
+    set_status("In the lobby of %s.", N.server_text);
+    InterlockedExchange(&N.state, NETPLAY_LOBBY);
+    netplay_lobby_list(0xFF);
+}
+
 static void on_packet(const uint8_t *b, int len)
 {
     /* A late WELCOME/START must not resurrect a rejected session. */
@@ -1178,6 +1195,7 @@ static void on_packet(const uint8_t *b, int len)
     switch (b[5]) {
     case T_WELCOME:
         if (len >= 6 + 8 + 1 + 6) {
+            if (N.lobby && N.have_token) break; /* a repeat can arrive during CAPS */
             memcpy(N.token, b + 6, 8);
             N.have_token = 1;
             if (N.lobby) {
@@ -1186,14 +1204,14 @@ static void on_packet(const uint8_t *b, int len)
                         netplay_send_caps132();
                         N.caps_tries132 = 1;
                         N.caps_sent132 = GetTickCount64();
-                        send_partner_device_id();
-                        N.device_tries = 1;
-                        N.device_sent = N.caps_sent132;
+                        N.device_tries = 0;
+                        N.device_sent = 0;
                         N.device_ack = 0;
+                        set_status("Waiting for FFNY Online to confirm Android build %u.",
+                                   (unsigned)FFNY_ANDROID_BUILD_NUMBER);
+                    } else {
+                        enter_lobby();
                     }
-                    InterlockedExchange(&N.state, NETPLAY_LOBBY);
-                    set_status("In the lobby of %s.", N.server_text);
-                    netplay_lobby_list(0xFF);
                 }
                 break;
             }
@@ -1254,6 +1272,12 @@ static void on_packet(const uint8_t *b, int len)
             if (InterlockedExchange(&N.relay_caps132, caps) != caps)
                 fprintf(stderr, "[NETCAP132] relay_caps=%08X rollback_allowed=%d; ordinary code rooms retained\n",
                     (unsigned)caps, !!(caps & CAPS_ROLLBACK132));
+            if (np_load(&N.state) == NETPLAY_CONNECTING) {
+                send_partner_device_id();
+                N.device_tries = 1;
+                N.device_sent = GetTickCount64();
+                enter_lobby();
+            }
         }
         break;
     case T_PONG:
@@ -1363,7 +1387,7 @@ static DWORD WINAPI net_thread(LPVOID unused)
         /* A terminal rejection stops all HELLO, pending, ping and match traffic.
          * Stop still joins this worker; retrying requires an explicit new Start. */
         if (np_load(&N.state) == NETPLAY_FAILED) { Sleep(20); continue; }
-        if (np_load(&N.state) == NETPLAY_CONNECTING) {
+        if (np_load(&N.state) == NETPLAY_CONNECTING && !N.have_token) {
             if (now - N.hello_sent >= 500) { send_hello(); N.hello_sent = now; }
             if (now - N.started > 10000) {
                 InterlockedExchange(&N.state, NETPLAY_FAILED);
@@ -1375,7 +1399,7 @@ static DWORD WINAPI net_thread(LPVOID unused)
             }
         }
         if (np_load(&N.state) == NETPLAY_FAILED) continue;
-        if (N.have_token) {
+        if (N.have_token && np_load(&N.state) != NETPLAY_CONNECTING) {
             if (now - N.last_ping >= 1000) {
                 N.ping_nonce++;
                 N.last_ping = now;
@@ -1408,14 +1432,22 @@ static DWORD WINAPI net_thread(LPVOID unused)
         /* Public relay capability negotiation is separate from room requests.
          * 0x20 is the old custom relay's password-create extension: never send
          * CAPS to that relay, and never advertise King of the Hill support. */
-        if (N.lobby && N.have_token && np_load(&N.state) == NETPLAY_LOBBY &&
+        if (N.lobby && N.have_token && np_load(&N.state) == NETPLAY_CONNECTING &&
             project_server_endpoint(N.server_text) && np_load(&N.relay_caps132) < 0 &&
             now - N.caps_sent132 >= RETRY_MS) {
-            if (N.caps_tries132++ < 5) netplay_send_caps132();
-            else InterlockedExchange(&N.relay_caps132, 0);
-            N.caps_sent132 = now;
+            if (N.caps_tries132 < 5) {
+                ++N.caps_tries132;
+                netplay_send_caps132();
+                N.caps_sent132 = now;
+            } else if (now - N.caps_sent132 >= CAPS_REPLY_GRACE_MS) {
+                set_status("FFNY Online did not confirm CAPS for Android build %u.",
+                           (unsigned)FFNY_ANDROID_BUILD_NUMBER);
+                InterlockedExchange(&N.state, NETPLAY_FAILED);
+                continue;
+            }
         }
-        if (N.lobby && N.have_token && !N.device_ack && N.device_tries < 5 &&
+        if (N.lobby && N.have_token && np_load(&N.state) != NETPLAY_CONNECTING &&
+            !N.device_ack && N.device_tries < 5 &&
             project_server_endpoint(N.server_text) && now - N.device_sent >= RETRY_MS) {
             send_partner_device_id();
             ++N.device_tries;

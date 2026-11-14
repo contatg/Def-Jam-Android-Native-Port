@@ -21,8 +21,8 @@ int main(void)
     uint8_t packet[NETCHECK_LEN_FULL];
     const uint8_t hello[] = {
         'D','J','N','P',1,1,2,0,0,0,0,0,0,
-        0xf3,0xcf,0x95,0x8a,0x33,0x99,0x60,0xbe,
-        4,'T','e','s','t',149,0,0,0,0,0,0,0,1
+        0xd5,0x3f,0x1a,0x2d,0xf3,0xb7,0xe4,0x32,
+        4,'T','e','s','t',150,0,0,0,0,0,0,0,1
     };
     const uint8_t token[] = { 0,1,2,3,4,5,6,7 };
     const uint8_t caps[] = { 'D','J','N','P',1,0x20,0,1,2,3,4,5,6,7,0,0,0,0 };
@@ -54,7 +54,7 @@ int main(void)
             exe = Path(directory) / "test-wire"
             subprocess.run(
                 ["cc", "-std=c11", "-Wall", "-Wextra", "-Werror",
-                 "-DFFNY_ANDROID_BUILD_NUMBER=149", "-x", "c",
+                 "-DFFNY_ANDROID_BUILD_NUMBER=150", "-x", "c",
                  "-I", str(ROOT / "src/hooks"), "-o", str(exe), "-"],
                 input=source, text=True, check=True,
             )

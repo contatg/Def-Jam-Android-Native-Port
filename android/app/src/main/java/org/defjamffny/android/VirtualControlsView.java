@@ -42,9 +42,11 @@ public final class VirtualControlsView extends View {
         "Left stick", "Right stick", "PUNCH", "KICK", "GRAPPLE", "BLOCK",
         "SPECIAL", "RUN", "START / PAUSE", "SETTINGS", "D-PAD (grouped)", "Down", "Left", "Right", "LB / L1", "RB / R1"
     };
-    private static final String[] SPRITE = {
-        null, null, "ctl_soco", "ctl_chute", "ctl_agarrar", "ctl_defender", "ctl_especial",
-        "ctl_correr", "ctl_pause", "ctl_config", "ctl_up", "ctl_down", "ctl_left", "ctl_right", null, null
+    private static final int[] SPRITE = {
+        0, 0, R.drawable.ctl_soco, R.drawable.ctl_chute, R.drawable.ctl_agarrar,
+        R.drawable.ctl_defender, R.drawable.ctl_especial, R.drawable.ctl_correr,
+        R.drawable.ctl_pause, R.drawable.ctl_config, R.drawable.ctl_up, R.drawable.ctl_down,
+        R.drawable.ctl_left, R.drawable.ctl_right, 0, 0
     };
     /* Artwork geometry in the source picture's pixels: centre x, centre y, width, height of the
      * button itself, then the width and height of the drawn sprite (it includes the glow). */
@@ -162,7 +164,7 @@ public final class VirtualControlsView extends View {
         selPaint.setStyle(Paint.Style.STROKE);
         selPaint.setStrokeWidth(dp(2.2f));
         selPaint.setColor(0xffffd48c);
-        for (int i = SOCO; i < N; i++) bmp[i] = load(SPRITE[i]);
+        for (int i = SOCO; i < N; i++) bmp[i] = loadArtwork(context, i);
         //136 restores both real sticks in the custom artwork profile.
         // Existing positions, sizes and button bindings remain intact.
         JSONObject root = readLayout();
@@ -265,16 +267,13 @@ public final class VirtualControlsView extends View {
         releaseAll(); menuOnly = value; invalidate();
     }
 
-    private Bitmap load(String name) {
-        try {
-            int id = getResources().getIdentifier(name, "drawable", getContext().getPackageName());
-            if (id == 0) return null;
-            BitmapFactory.Options o = new BitmapFactory.Options();
-            o.inScaled = false;
-            return BitmapFactory.decodeResource(getResources(), id, o);
-        } catch (Throwable t) {
-            return null;
-        }
+    static Bitmap loadArtwork(Context context, int control) {
+        if (control < 0) return null;
+        int id = SPRITE[control];
+        if (id == 0) return null;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inScaled = false;
+        return BitmapFactory.decodeResource(context.getResources(), id, options);
     }
 
     private static float clamp(float v, float lo, float hi) {

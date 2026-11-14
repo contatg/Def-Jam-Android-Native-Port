@@ -1618,8 +1618,8 @@ bool draw(ImVec2 display)
         page_title(dl, f, "ONLINE");
         text(dl, f, g_hand, 20, 54, 110, RED, "No connection", LEFT, 1.0f);
         text(dl, f, g_title, 14, 54, 145, WHITE, status, LEFT, 0.8f, 265);
-        door_text(dl, f, &tex("ui/online_icon.png"), "OFFLINE", "NO CONNECTION",
-                  "Check the internet connection, then press A to try again.");
+        door_text(dl, f, &tex("ui/online_icon.png"), "OFFLINE", "CONNECTION FAILED",
+                  "Press A to retry or B to return.");
         float hx = 54;
         hx += hint(dl, f, hx, 392, "a", "TRY AGAIN");
         hint(dl, f, hx, 392, "b", "BACK");
