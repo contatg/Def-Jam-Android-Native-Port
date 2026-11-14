@@ -267,8 +267,7 @@ public final class VirtualControlsView extends View {
         releaseAll(); menuOnly = value; invalidate();
     }
 
-    static Bitmap loadArtwork(Context context, int control) {
-        if (control < 0) return null;
+    private static Bitmap loadArtwork(Context context, int control) {
         int id = SPRITE[control];
         if (id == 0) return null;
         BitmapFactory.Options options = new BitmapFactory.Options();

@@ -18,22 +18,8 @@ final class MenuTouchSettings {
     private static final float[] DEFAULT_X={.86f,.95f,.14f,.44f,.58f,.86f,.95f,.86f,.95f,.86f,.95f};
     private static final float[] DEFAULT_Y={.83f,.83f,.76f,.94f,.94f,.65f,.65f,.47f,.47f,.34f,.34f};
     final float[] size=new float[COUNT], alpha=new float[COUNT];
-    boolean customArtwork, playStation;
-    void setStyle127(int style) {
-        customArtwork = style == FightControlProfiles.CUSTOM;
-        playStation = style == FightControlProfiles.PLAYSTATION;
-    }
-    static int artworkControl(int index) {
-        switch (index) {
-            case A: return VirtualControlsView.AGARRAR;
-            case B: return VirtualControlsView.CORRER;
-            case X: return VirtualControlsView.CHUTE;
-            case Y: return VirtualControlsView.SOCO;
-            case LT: return VirtualControlsView.ESPECIAL;
-            case RT: return VirtualControlsView.DEFENDER;
-            default: return -1;
-        }
-    }
+    boolean playStation;
+    void setStyle127(int style){playStation=style==FightControlProfiles.PLAYSTATION;}
     final float[] x=DEFAULT_X.clone(),y=DEFAULT_Y.clone();
     MenuTouchSettings(JSONObject data) {
         reset();

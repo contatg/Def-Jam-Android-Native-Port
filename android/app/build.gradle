@@ -12,7 +12,7 @@ android {
     ndkVersion project.findProperty("defjamNdkVersion") ?: "28.2.13676358"
 
     defaultConfig {
-        applicationId "org.defjamffny.android.v15"
+        applicationId "org.defjamffny.android"
         minSdk 29
         targetSdk 34
         versionCode androidBuildNumber

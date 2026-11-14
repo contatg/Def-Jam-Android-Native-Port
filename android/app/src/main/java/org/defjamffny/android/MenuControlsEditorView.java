@@ -1,7 +1,6 @@
 package org.defjamffny.android;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -13,9 +12,6 @@ final class MenuControlsEditorView extends View {
     private final MenuTouchSettings settings;
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF[] boxes=new RectF[MenuTouchSettings.COUNT];
-    private final Bitmap[] artwork = new Bitmap[MenuTouchSettings.COUNT];
-    private final Bitmap[] arrows = new Bitmap[4];
-    private final Paint artworkPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final TouchEditorGuide editorGuide;
     private final TouchDpadLayout pad=new TouchDpadLayout();
     private final RectF arrow=new RectF();
@@ -26,12 +22,7 @@ final class MenuControlsEditorView extends View {
     MenuControlsEditorView(Context c,MenuTouchSettings values) {
         super(c);settings=values;
         editorGuide=new TouchEditorGuide(getResources().getDisplayMetrics().density);
-        for (int i = 0; i < boxes.length; i++) {
-            boxes[i] = new RectF();
-            artwork[i] = VirtualControlsView.loadArtwork(c, MenuTouchSettings.artworkControl(i));
-        }
-        for (int i = 0; i < arrows.length; i++)
-            arrows[i] = VirtualControlsView.loadArtwork(c, VirtualControlsView.UP + i);
+        for(int i=0;i<boxes.length;i++)boxes[i]=new RectF();
     }
     private static String label129(int index){
         switch(index){case 0:return "A";case 1:return "B";case 2:return UiText.t("D-PAD (grouped)");case 3:return "ENTER / START";case 5:return "X / □";case 6:return "Y / △";case 7:return "LT / L2";case 8:return "RT / R2";case 9:return "LB / L1";case 10:return "RB / R1";default:return "";}
@@ -51,7 +42,7 @@ final class MenuControlsEditorView extends View {
             float hw,hh;
             if(!MenuTouchSettings.editable129(i)){boxes[i].setEmpty();continue;}
             if(i==MenuTouchSettings.DPAD)continue;
-            if(i>=MenuTouchSettings.LT && !(settings.customArtwork && artwork[i] != null)){hw=Math.min(h*.068f,w*.04f)*1.1f*settings.size[i];hh=hw*.65f/1.1f;}
+            if(i>=MenuTouchSettings.LT){hw=Math.min(h*.068f,w*.04f)*1.1f*settings.size[i];hh=hw*.65f/1.1f;}
             else if(i<2||i>=MenuTouchSettings.X)hw=hh=Math.min(h*.068f,w*.04f)*settings.size[i];
             else{hw=Math.min(w/2,dp(40*settings.size[i]));hh=Math.min(h/2,dp(18*settings.size[i]));}
             float x=MenuTouchSettings.center(settings.x[i],w,hw),y=MenuTouchSettings.center(settings.y[i],h,hh);
@@ -73,21 +64,13 @@ final class MenuControlsEditorView extends View {
             RectF r=boxes[i];int alpha=Math.round(255*Math.max(.15f,settings.alpha[i]));
             paint.setStyle(Paint.Style.FILL);paint.setColor((alpha<<24)|0x111822);
             boolean face=i==MenuTouchSettings.A||i==MenuTouchSettings.B||i==MenuTouchSettings.X||i==MenuTouchSettings.Y;
-            if (settings.customArtwork && artwork[i] != null) {
-                artworkPaint.setAlpha(alpha);
-                c.drawBitmap(artwork[i], null, r, artworkPaint);
-            } else if(face)c.drawOval(r,paint);else c.drawRoundRect(r,dp(10),dp(10),paint);
+            if(face)c.drawOval(r,paint);else c.drawRoundRect(r,dp(10),dp(10),paint);
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(dp(i==selected?3:1));paint.setColor(i==selected?0xffffd48c:PortUi.LINE);
             if(face)c.drawOval(r,paint);else c.drawRoundRect(r,dp(10),dp(10),paint);
             if(i==MenuTouchSettings.DPAD){
                 for(int j=0;j<4;j++){
                     float half=pad.cell*.48f;arrow.set(pad.cx[j]-half,pad.cy[j]-half,pad.cx[j]+half,pad.cy[j]+half);
-                    if (settings.customArtwork && arrows[j] != null) {
-                        artworkPaint.setAlpha(alpha);
-                        c.drawBitmap(arrows[j], null, arrow, artworkPaint);
-                    } else {
-                        label(c,ARROWS[j],arrow,pad.cell*.5f);
-                    }
+                    label(c,ARROWS[j],arrow,pad.cell*.5f);
                 }
             }else label(c,label129(i),r,Math.min(dp(14)*settings.size[i],r.height()*.4f));
         }
